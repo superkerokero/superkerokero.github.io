@@ -91,7 +91,7 @@
                 <!-- Contact Form - Enter your email address on line 19 of the mail/contact_me.php file to make this form work. -->
                 <!-- WARNING: Some web hosts do not allow emails to be sent through forms to common mail hosts like Gmail or Yahoo. It's recommended that you use a private domain email address! -->
                 <!-- NOTE: To use the contact form, your site must be on a live web host with PHP! The form will not work locally! -->
-                <iframe id="myIframe" src="" scrolling="no" frameborder="0" onload="this.style.height=this.contentDocument.body.scrollHeight +'px';hljs.initHighlightingOnLoad();"></iframe>
+                <iframe id="myIframe" src="" scrolling="no" frameborder="0" onload="this.style.height=this.contentDocument.body.scrollHeight +'px';"></iframe>
             </div>
         </div>
     </div>
@@ -146,8 +146,6 @@
         var postItem = localStorage.getItem("postSrc");
         $("#myIframe").attr("src", postItem);
         $("#myIframe").attr("width", $(window).width());
-        // var script = 'hljs.initHighlightingOnLoad();';
-        // $('#myIframe').contents().find('body').append($('<script>').html(script))
     </script>
 
 </body>
