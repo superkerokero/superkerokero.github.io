@@ -1,0 +1,17 @@
+{
+    "posts": [{
+        "title": "Setting up a blog that can be updated using only iOS devices on Github pages",
+        "subtitle": "It has become quite convenient now with smart devices",
+        "author": "superkerokero",
+        "date": "June 10, 2017",
+        "authorInfo": "about.html",
+        "postAddress": "posts/SettingUpAblog.html"
+    }, {
+        "title": "Markdown syntax full version",
+        "subtitle": "It's helpful to review some basics every now and then",
+        "author": "superkerokero",
+        "date": "June 14, 2017",
+        "authorInfo": "about.html",
+        "postAddress": "posts/markdown.html"
+    }]
+}
