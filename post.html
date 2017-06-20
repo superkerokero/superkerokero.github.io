@@ -146,6 +146,8 @@
         var postItem = localStorage.getItem("postSrc");
         $("#myIframe").attr("src", postItem);
         $("#myIframe").attr("width", $(window).width());
+        var script = 'hljs.initHighlightingOnLoad();';
+        $('#myIframe').contents().find('body').append($('<script>').html(script))
     </script>
 
 </body>
