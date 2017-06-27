@@ -13,5 +13,12 @@
         "date": "June 14, 2017",
         "authorInfo": "about.html",
         "postAddress": "posts/markdown.html"
+    }, {
+        "title": "How to disable Nouvean driver and install CUDA 8.0 & cuDNN 5.1 on older systems like Fedora 17",
+        "subtitle": "Disabling Nouvean driver is quite onerous for some Linux distributions",
+        "author": "superkerokero",
+        "date": "June 27, 2017",
+        "authorInfo": "about.html",
+        "postAddress": "posts/CUDAfedora.html"
     }]
 }
