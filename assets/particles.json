@@ -82,20 +82,20 @@
         },
         "modes": {
             "grab": {
-                "distance": 200,
+                "distance": 100,
                 "line_linked": {
                     "opacity": 0.5
                 }
             },
             "bubble": {
-                "distance": 200,
+                "distance": 100,
                 "size": 10,
                 "duration": 0.3,
                 "opacity": 1,
                 "speed": 3
             },
             "repulse": {
-                "distance": 400,
+                "distance": 100,
                 "duration": 0.4
             },
             "push": {
