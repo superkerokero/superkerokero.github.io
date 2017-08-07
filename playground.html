@@ -10,6 +10,7 @@
 
     <title>KeroKero's Blog</title>
     <link rel="icon" href="img/icon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css">
 
     <!-- Bootstrap core CSS -->
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -44,6 +45,16 @@
             height: auto;
             width: 100%;
         }
+        
+        #particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 20;
+            ;
+        }
     </style>
 
 </head>
@@ -56,7 +67,7 @@
             <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
                 Menu <i class="fa fa-bars"></i>
             </button>
-            <a class="navbar-brand" href="index.html">KeroKero's Blog</a>
+            <a class="navbar-brand animated pulse infinite" href="index.html">KeroKero's Blog</a>
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
@@ -87,6 +98,7 @@
                     </div>
                 </div>
             </div>
+            <div id="particles"></div>
         </div>
     </header>
 
@@ -108,7 +120,7 @@
                 <img src="img/pg-ham.png" border="0" class="responsive-image" alt="Null">
                 <hr>
                 <div class="post-preview">
-                    <a href="https://superkerokero.github.io/spring-festival">
+                    <a href="https://superkerokero.ddns.net/spring-festival">
                         <h2 class="post-title">
                             Spring festival event promotion site that features an animated rooster
                         </h2>
@@ -167,9 +179,15 @@
     <script src="vendor/jquery/jquery.min.js"></script>
     <script src="vendor/tether/tether.min.js"></script>
     <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 
     <!-- Custom scripts for this template -->
     <script src="js/clean-blog.min.js"></script>
+    <script>
+        particlesJS.load('particles', 'assets/particles.json', function() {
+            console.log('callback - particles.js config loaded');
+        });
+    </script>
 
 </body>
 

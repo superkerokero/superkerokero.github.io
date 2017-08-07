@@ -28,10 +28,16 @@ function append_older_button(address = "#") {
     );
 };
 
-//Get posts json list.
-$.getJSON("posts.json", function(data) {
-    for (var i = data.posts.length - 1; i > -1; i--) {
-        append_post(data.posts[i], i);
-    };
-    append_older_button();
+$(document).ready(function() {
+
+    particlesJS.load('particles', 'assets/particles.json', function() {
+        console.log('callback - particles.js config loaded');
+    });
+    //Get posts json list.
+    $.getJSON("posts.json", function(data) {
+        for (var i = data.posts.length - 1; i > -1; i--) {
+            append_post(data.posts[i], i);
+        };
+        append_older_button();
+    });
 });
