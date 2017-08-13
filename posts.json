@@ -20,5 +20,19 @@
         "date": "June 27, 2017",
         "authorInfo": "about.html",
         "postAddress": "posts/CUDAfedora.html"
+    }, {
+        "title": "Some notes on the use of \"sed\" command for text processing automation",
+        "subtitle": "Some pitfalls you might come across along the way",
+        "author": "superkerokero",
+        "date": "August 12, 2017",
+        "authorInfo": "about.html",
+        "postAddress": "posts/sedgoodpractice.html"
+    }, {
+        "title": "Slack webhooks for dummies: a beginner's guide to making your own slack bots using Python",
+        "subtitle": "Slack bots made easy",
+        "author": "superkerokero",
+        "date": "August 13, 2017",
+        "authorInfo": "about.html",
+        "postAddress": "posts/slackwebhooks.html"
     }]
 }
