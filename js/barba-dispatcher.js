@@ -70,7 +70,7 @@ Barba.Dispatcher.on('newPageReady', function(currentStatus, oldStatus, container
                     'username': 'Web-form-notification',
                     'icon_emoji': ':bulb:',
                     'link_names': 1,
-                    'text': '\nEmail: ' + email + '\n Name: ' + name + '\n Message: ' + message
+                    'text': '\nEmail: ' + email + '\nName: ' + name + '\nMessage: ' + message
                 };
 
                 let response = grecaptcha.getResponse();
