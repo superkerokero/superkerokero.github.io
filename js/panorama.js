@@ -1,4 +1,5 @@
 var camera, scene, renderer;
+var canvas = document.getElementById("particles-js");
 var isUserInteracting = false,
     onMouseDownMouseX = 0,
     onMouseDownMouseY = 0,
@@ -14,7 +15,7 @@ animate();
 function init() {
     var container, mesh;
     container = document.getElementById('container-panorama');
-    camera = new THREE.PerspectiveCamera(45, 4 / 1, 1, 1100);
+    camera = new THREE.PerspectiveCamera(45, 2 * window.innerWidth / window.innerHeight, 1, 1100);
     camera.target = new THREE.Vector3(0, 0, 0);
     scene = new THREE.Scene();
     var geometry = new THREE.SphereGeometry(500, 60, 40);
@@ -29,12 +30,12 @@ function init() {
     //renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setSize($("#masthead").width(), $("#masthead").height());
     container.appendChild(renderer.domElement);
-    document.addEventListener('mousedown', onDocumentMouseDown, false);
-    document.addEventListener('mousemove', onDocumentMouseMove, false);
-    document.addEventListener('mouseup', onDocumentMouseUp, false);
-    document.addEventListener('touchstart', onDocumentMouseDown, false);
-    document.addEventListener('touchmove', onDocumentMouseMove, false);
-    document.addEventListener('touchend', onDocumentMouseUp, false);
+    canvas.addEventListener('mousedown', onDocumentMouseDown, false);
+    canvas.addEventListener('mousemove', onDocumentMouseMove, false);
+    canvas.addEventListener('mouseup', onDocumentMouseUp, false);
+    canvas.addEventListener('touchstart', onDocumentMouseDown, false);
+    canvas.addEventListener('touchmove', onDocumentMouseMove, false);
+    canvas.addEventListener('touchend', onDocumentMouseUp, false);
     //document.addEventListener('wheel', onDocumentMouseWheel, false);
     //
     document.addEventListener('dragover', function(event) {
@@ -62,7 +63,7 @@ function init() {
 }
 
 function onWindowResize() {
-    camera.aspect = 4 / 1; //window.innerWidth / window.innerHeight;
+    camera.aspect = 2 * window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     //renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setSize($("#masthead").width(), $("#masthead").height());
