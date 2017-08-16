@@ -33,9 +33,9 @@ function init() {
     canvas.addEventListener('mousedown', onDocumentMouseDown, false);
     canvas.addEventListener('mousemove', onDocumentMouseMove, false);
     canvas.addEventListener('mouseup', onDocumentMouseUp, false);
-    canvas.addEventListener('touchstart', onDocumentMouseDown, false);
-    canvas.addEventListener('touchmove', onDocumentMouseMove, false);
-    canvas.addEventListener('touchend', onDocumentMouseUp, false);
+    canvas.addEventListener('touchstart', onDocumentTouchStart, false);
+    canvas.addEventListener('touchmove', onDocumentTouchMove, false);
+    canvas.addEventListener('touchend', onDocumentTouchEnd, false);
     //document.addEventListener('wheel', onDocumentMouseWheel, false);
     //
     document.addEventListener('dragover', function(event) {
@@ -63,7 +63,7 @@ function init() {
 }
 
 function onWindowResize() {
-    camera.aspect = 2 * window.innerWidth / window.innerHeight;
+    camera.aspect = $("#masthead").width() / $("#masthead").height();
     camera.updateProjectionMatrix();
     //renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setSize($("#masthead").width(), $("#masthead").height());
@@ -86,6 +86,26 @@ function onDocumentMouseMove(event) {
 }
 
 function onDocumentMouseUp(event) {
+    isUserInteracting = false;
+}
+
+function onDocumentTouchStart(event) {
+    event.preventDefault();
+    isUserInteracting = true;
+    onMouseDownMouseX = event.touches[0].clientX;
+    onMouseDownMouseY = event.touches[0].clientY;
+    onMouseDownLon = lon;
+    onMouseDownLat = lat;
+}
+
+function onDocumentTouchMove(event) {
+    if (isUserInteracting === true) {
+        lon = (onMouseDownMouseX - event.touches[0].clientX) * 0.1 + onMouseDownLon;
+        lat = (event.touches[0].clientY - onMouseDownMouseY) * 0.1 + onMouseDownLat;
+    }
+}
+
+function onDocumentTouchEnd(event) {
     isUserInteracting = false;
 }
 
