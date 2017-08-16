@@ -19,6 +19,42 @@ Barba.Dispatcher.on('newPageReady', function(currentStatus, oldStatus, container
             break;
         case "playground":
             $(".site-heading").html("<h1>Playground</h1><span class='subheading'>A thing of beauty is a joy forever</span>");
+
+            function drawImage(imageObj, canvas_id) {
+                var canvas = document.getElementById(canvas_id);
+                var context = canvas.getContext('2d');
+                var x = 0;
+                var y = 0;
+                context.imageSmoothingEnabled = false;
+                context.drawImage(imageObj, x, y, imageObj.width, imageObj.height, x, y, canvas.width, canvas.height);
+
+                var imageData = context.getImageData(x, y, imageObj.width, imageObj.height);
+                var data = imageData.data;
+
+                for (var i = 0; i < data.length; i += 4) {
+                    var brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+                    // red
+                    data[i] = brightness;
+                    // green
+                    data[i + 1] = brightness;
+                    // blue
+                    data[i + 2] = brightness;
+                }
+
+                // overwrite original image
+                context.putImageData(imageData, x, y);
+            }
+
+            var imageObj1 = new Image();
+            imageObj1.onload = function() {
+                drawImage(this, 'imagectx1');
+            };
+            imageObj1.src = 'img/pg-ham.png';
+            var imageObj2 = new Image();
+            imageObj2.onload = function() {
+                drawImage(this, 'imagectx2');
+            };
+            imageObj2.src = 'img/pg-springfes.png';
             //index.onEnter();
             console.log('about');
             break;
