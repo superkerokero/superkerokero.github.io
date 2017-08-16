@@ -14,7 +14,7 @@ animate();
 function init() {
     var container, mesh;
     container = document.getElementById('container-panorama');
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
+    camera = new THREE.PerspectiveCamera(45, 4 / 1, 1, 1100);
     camera.target = new THREE.Vector3(0, 0, 0);
     scene = new THREE.Scene();
     var geometry = new THREE.SphereGeometry(500, 60, 40);
@@ -32,6 +32,9 @@ function init() {
     document.addEventListener('mousedown', onDocumentMouseDown, false);
     document.addEventListener('mousemove', onDocumentMouseMove, false);
     document.addEventListener('mouseup', onDocumentMouseUp, false);
+    document.addEventListener('touchstart', onDocumentMouseDown, false);
+    document.addEventListener('touchmove', onDocumentMouseMove, false);
+    document.addEventListener('touchend', onDocumentMouseUp, false);
     //document.addEventListener('wheel', onDocumentMouseWheel, false);
     //
     document.addEventListener('dragover', function(event) {
@@ -59,7 +62,7 @@ function init() {
 }
 
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = 4 / 1; //window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     //renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setSize($("#masthead").width(), $("#masthead").height());
