@@ -100,7 +100,7 @@ Barba.Dispatcher.on('newPageReady', function(currentStatus, oldStatus, container
                     datatype: 'json',
                     processData: false,
                     success: function(data) {
-                        if (data['success']) {
+                        if (JSON.parse(data)['success']) {
                             $.ajax({
                                 url: "https://hooks.slack.com/services/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",
                                 type: "POST",
