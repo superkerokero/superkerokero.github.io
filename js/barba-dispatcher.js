@@ -91,7 +91,7 @@ Barba.Dispatcher.on('newPageReady', function(currentStatus, oldStatus, container
                 };
 
                 $.ajax({
-                    url: "https://superkerokero.ddns.net/captcha-verify",
+                    url: "https://superkerokero.ddns.net:8000/captcha-verify",
                     type: "POST",
                     data: JSON.stringify({
                         "response": response
