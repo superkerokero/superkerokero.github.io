@@ -73,12 +73,7 @@ Barba.Dispatcher.on('newPageReady', function(currentStatus, oldStatus, container
                     'text': '\nEmail: ' + email + '\nName: ' + name + '\nMessage: ' + message
                 };
 
-                let response = grecaptcha.getResponse();
-
-                if (response.length == 0) {
-                    $("#status-area").html('Please verify the captcha before submission!');
-                    return;
-                } else if (email.length == 0) {
+                if (email.length == 0) {
                     $("#status-area").html("Please fill in the email before submission!");
                     return;
                 } else if (name.length == 0) {
@@ -88,22 +83,49 @@ Barba.Dispatcher.on('newPageReady', function(currentStatus, oldStatus, container
                     $("#status-area").html("Please fill in the message before submission!");
                     return;
                 };
+
+                let response = grecaptcha.getResponse();
+                if (response.length == 0) {
+                    $("#status-area").html('Please verify the captcha before submission!');
+                    return;
+                };
+
                 $.ajax({
-                    url: "https://hooks.slack.com/services/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",
+                    url: "https://superkerokero.ddns.net/captcha-verify",
                     type: "POST",
-                    data: JSON.stringify(data),
+                    data: JSON.stringify({
+                        "response": response
+                    }),
                     //contentType: 'application/json',
                     datatype: 'json',
                     processData: false,
                     success: function(data) {
-                        $("#status-area").html('Your message is delivered successfully! <BR> I will try to get back to you within 24 hours!');
-                        $('#InputEmail').val("");
-                        $('#InputName').val("");
-                        $('#Textarea').val("");
+                        if (data['success']) {
+                            $.ajax({
+                                url: "https://hooks.slack.com/services/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",
+                                type: "POST",
+                                data: JSON.stringify(data),
+                                //contentType: 'application/json',
+                                datatype: 'json',
+                                processData: false,
+                                success: function(data) {
+                                    $("#status-area").html('Your message is delivered successfully! <BR> I will try to get back to you within 24 hours!');
+                                    $('#InputEmail').val("");
+                                    $('#InputName').val("");
+                                    $('#Textarea').val("");
+                                },
+                                error: function(XMLHttpRequest, textStatus) {
+                                    console.log(XMLHttpRequest.status, textStatus)
+                                    $("#status-area").html('Error upon AJAX POST request to slack server!');
+                                }
+                            });
+                        } else {
+                            $("#status-area").html('Verification of reCAPTCHA by Google failed!');
+                        };
                     },
                     error: function(XMLHttpRequest, textStatus) {
                         console.log(XMLHttpRequest.status, textStatus)
-                        $("#status-area").html('Error upon AJAX POST request!');
+                        $("#status-area").html('Error upon AJAX POST request to relay server!');
                     }
                 });
             });
