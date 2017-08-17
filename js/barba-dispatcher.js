@@ -66,7 +66,7 @@ Barba.Dispatcher.on('newPageReady', function(currentStatus, oldStatus, container
                 let email = $('#InputEmail').val();
                 let name = $('#InputName').val();
                 let message = $('#Textarea').val();
-                let data = {
+                let slackdata = {
                     'username': 'Web-form-notification',
                     'icon_emoji': ':bulb:',
                     'link_names': 1,
@@ -104,7 +104,7 @@ Barba.Dispatcher.on('newPageReady', function(currentStatus, oldStatus, container
                             $.ajax({
                                 url: "https://hooks.slack.com/services/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",
                                 type: "POST",
-                                data: JSON.stringify(data),
+                                data: JSON.stringify(slackdata),
                                 //contentType: 'application/json',
                                 datatype: 'json',
                                 processData: false,
