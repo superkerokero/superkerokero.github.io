@@ -14,10 +14,12 @@ animate();
 
 function init() {
     var container, mesh;
+    var color = new THREE.Color(0xffffff);
     container = document.getElementById('container-panorama');
     camera = new THREE.PerspectiveCamera(45, 2 * window.innerWidth / window.innerHeight, 1, 1100);
     camera.target = new THREE.Vector3(0, 0, 0);
     scene = new THREE.Scene();
+    scene.background = color;
     var geometry = new THREE.SphereGeometry(500, 60, 40);
     geometry.scale(-1, 1, 1);
     var material = new THREE.MeshBasicMaterial({
