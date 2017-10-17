@@ -88,46 +88,26 @@ Barba.Dispatcher.on('newPageReady', function(currentStatus, oldStatus, container
                 if (response.length == 0) {
                     $("#status-area").html('Please verify the captcha before submission!');
                     return;
+                } else {
+                    $.ajax({
+                        url: "https://hooks.slack.com/services/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",
+                        type: "POST",
+                        data: JSON.stringify(slackdata),
+                        //contentType: 'application/json',
+                        datatype: 'json',
+                        processData: false,
+                        success: function(data) {
+                            $("#status-area").html('Your message is delivered successfully! <BR> I will try to get back to you within 24 hours!');
+                            $('#InputEmail').val("");
+                            $('#InputName').val("");
+                            $('#Textarea').val("");
+                        },
+                        error: function(XMLHttpRequest, textStatus) {
+                            console.log(XMLHttpRequest.status, textStatus)
+                            $("#status-area").html('Error upon AJAX POST request to slack server!');
+                        }
+                    });
                 };
-
-                $.ajax({
-                    url: "https://superkerokero.ddns.net:8000/captcha-verify",
-                    type: "POST",
-                    data: JSON.stringify({
-                        "response": response
-                    }),
-                    //contentType: 'application/json',
-                    datatype: 'json',
-                    processData: false,
-                    success: function(data) {
-                        if (JSON.parse(data)['success']) {
-                            $.ajax({
-                                url: "https://hooks.slack.com/services/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",
-                                type: "POST",
-                                data: JSON.stringify(slackdata),
-                                //contentType: 'application/json',
-                                datatype: 'json',
-                                processData: false,
-                                success: function(data) {
-                                    $("#status-area").html('Your message is delivered successfully! <BR> I will try to get back to you within 24 hours!');
-                                    $('#InputEmail').val("");
-                                    $('#InputName').val("");
-                                    $('#Textarea').val("");
-                                },
-                                error: function(XMLHttpRequest, textStatus) {
-                                    console.log(XMLHttpRequest.status, textStatus)
-                                    $("#status-area").html('Error upon AJAX POST request to slack server!');
-                                }
-                            });
-                        } else {
-                            $("#status-area").html('Verification of reCAPTCHA by Google failed!');
-                        };
-                    },
-                    error: function(XMLHttpRequest, textStatus) {
-                        console.log(XMLHttpRequest.status, textStatus)
-                        $("#status-area").html('Error upon AJAX POST request to relay server!');
-                    }
-                });
             });
             //index.onEnter();
             console.log('about');
