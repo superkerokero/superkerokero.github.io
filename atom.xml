@@ -1,0 +1,1880 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Computational Nonsense]]></title>
+  <link href="https://superkerokero.github.io/atom.xml" rel="self"/>
+  <link href="https://superkerokero.github.io/"/>
+  <updated>2018-01-07T04:27:32+09:00</updated>
+  <id>https://superkerokero.github.io/</id>
+  <author>
+    <name><![CDATA[]]></name>
+    
+  </author>
+  <generator uri="http://www.mweb.im/">MWeb</generator>
+  
+  <entry>
+    <title type="html"><![CDATA[Notes on reverse SSH tunnel: Connect to servers behind NATs and firewalls through publicly available middle server]]></title>
+    <link href="https://superkerokero.github.io/15152601961161.html"/>
+    <updated>2018-01-07T02:36:36+09:00</updated>
+    <id>https://superkerokero.github.io/15152601961161.html</id>
+    <content type="html"><![CDATA[
+<p>In some cases, the servers you use in office/school may be behind some NAT or firewall so that you can not access these servers from the external internet. This can be inconvenient sometimes. A simple walkaround of this problem is reverse SSH tunneling. For all Unix like systems(e.g. Linux, MacOS), this just works fine.</p>
+
+<span id="more"></span><!-- more -->
+
+<h2 id="toc_0">How to establish reverse SSH tunnel</h2>
+
+<p>The whole connection route will look like this:</p>
+
+<p><strong>Destination Server &lt;- |NAT| &lt;- Public Server &lt;- Your PC</strong></p>
+
+<p>In order to establish a reverse SSH tunnel, first you need to forward an unused port(e.g. 19999) from the destination server to the public server:</p>
+
+<pre><code class="language-bash">ssh -R 19999:localhost:22 user@pubic_server
+</code></pre>
+
+<p>Then from your PC, SSH to the public server first:</p>
+
+<pre><code class="language-bash">ssh user@public_server
+</code></pre>
+
+<p>Then from the public server, do the following to SSH to the destination server:</p>
+
+<pre><code class="language-bash">ssh localhost -p 19999
+</code></pre>
+
+<p>Now you have successfully gain access to the destination server from your PC(from external Internet)!</p>
+
+<h2 id="toc_1">Make the reverse SSH tunnel stable</h2>
+
+<p>This tunnel can be unstable for long terms(some times the port forwarding can fail). In order to make it more reliable, we make use of linux system&#39;s cron utility.</p>
+
+<p>First we make a configuration for the public server by adding the following to the &quot;~/.ssh/config&quot; file:</p>
+
+<pre><code class="language-bash">Host public_server
+   ServerAliveInterval 60
+   ExitOnForwardFailure yes
+   TCPKeepAlive no
+</code></pre>
+
+<p>Then restart sshd service to make the configuration effective:</p>
+
+<pre><code class="language-bash">sudo service sshd restart
+</code></pre>
+
+<p>Now make a script file like this(make sure you can SSH to public_server without password using ssh keys):</p>
+
+<pre><code class="language-bash"># reverse_ssh_tunnel.sh
+#!/bin/sh
+COMMAND=&quot;ssh -N -f -R 19999:localhost:22 user@public_server&quot;
+pgrep -f -x &quot;$COMMAND&quot; &gt; /dev/null 2&gt;&amp;1 || $COMMAND
+</code></pre>
+
+<p>Then add a new crontab by the following command:</p>
+
+<pre><code class="language-bash">crontab -e
+</code></pre>
+
+<p>Add the following:</p>
+
+<pre><code class="language-bash">*/1 * * * * /bin/sh [path to your script file]
+</code></pre>
+
+<p>This will check if the forwarding is alive or not every 1 minute. If it is not,cron will rerun the SSH command.</p>
+
+<h2 id="toc_2">Using SFTP and etc. through reverse SSH tunnel</h2>
+
+<p>You might want to be able to use SFTP or access the jupyter notebook on the destination server as well. This can be achieved by adding a regular tunnel from any unused port on your PC to port 19999 on public_server:</p>
+
+<pre><code class="language-bash">ssh -L 19998:localhost:19999 user@public_server
+</code></pre>
+
+<p>Now you can access the destination server by using the 19998 port on your PC(localhost). Works like a magic!</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Slack webhooks for dummies: a beginer's guide to making your own slack bots using Python]]></title>
+    <link href="https://superkerokero.github.io/15152599330196.html"/>
+    <updated>2018-01-07T02:32:13+09:00</updated>
+    <id>https://superkerokero.github.io/15152599330196.html</id>
+    <content type="html"><![CDATA[
+<h2 id="toc_0">What is slack</h2>
+
+<p>Slack is a cloud-based set of team collaboration tools and services, founded by Stewart Butterfield. Slack began as an internal tool used by their company, Tiny Speck, in the development of Glitch, a now defunct online game. The name is an acronym for &quot;Searchable Log of All Conversation and Knowledge&quot;.<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup></p>
+
+<span id="more"></span><!-- more -->
+
+<h2 id="toc_1">What is webhook</h2>
+
+<p>A webhook in web development is a method of augmenting or altering the behavior of a web page, or web application, with custom callbacks. These callbacks may be maintained, modified, and managed by third-party users and developers who may not necessarily be affiliated with the originating website or application. The term &quot;webhook&quot; was coined by Jeff Lindsay in 2007 from the computer programming term hook.<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup></p>
+
+<h2 id="toc_2">Slack&#39;s webhook</h2>
+
+<p>Slack offers two kinds of webhooks to allow the communication with the slack channels. </p>
+
+<h3 id="toc_3">1. Incoming Webhooks</h3>
+
+<p>Incoming Webhooks are a simple way to post messages from external sources into Slack. They make use of normal HTTP requests with a JSON payload that includes the message text and some options. Message Attachments can also be used in Incoming Webhooks to display richly-formatted messages that stand out from regular chat messages.</p>
+
+<h3 id="toc_4">2. Outgoing webhooks</h3>
+
+<p>Outgoing webhooks will send an HTTP POST request to your specified URL when a message matches one or both of the following conditions:</p>
+
+<ul>
+<li>The message is in the specified channel</li>
+<li>The message begins with one of the defined trigger word(s)</li>
+</ul>
+
+<p>This is useful for providing automated responses to messages your team members post. For example, you might have a service that posts the status of a server. This service could receive the HTTP POST from Slack and automatically respond with a status update.</p>
+
+<p>The outgoing webhook integration is only available in public channels. If you would like to get data out of private groups and DMs in real-time, try a slash command.</p>
+
+<p>To summarize, incoming webhooks allows you to send messages to a slack channel; while outgoing webhooks allows you to get some message from a slack channel and send responses to it.</p>
+
+<h2 id="toc_5">How a slack robot works using webhooks</h2>
+
+<p>A slack robot is basically a piece of software that </p>
+
+<ul>
+<li>takes some informaton from either external source(<em>e.g.</em> a web crawler) of from a slack channel(using the outgoing webhook),</li>
+<li>process the information and send some information back to the slack channel(using either the incoming webhook or the response function of the outgoing webhook).</li>
+</ul>
+
+<p>Now let&#39;s build a simple slack bot that looks at <a href="https://stackoverflow.com/questions">stackoverflow&#39;s question page</a> every minute, grab the current number of total questions, and return this information to our slack channel using incoming webhook.<br/>
+<img src="http://i.imgur.com/aOqzsmu.png" alt="stackoverflow question page"/></p>
+
+<h3 id="toc_6">1. Add incoming webhooks integration in slack</h3>
+
+<p>Go to slacks&#39; <a href="https://my.slack.com/services/new/incoming-webhook/">incoming webhook integration page</a> to choose a slack channel and click the <strong>Add Incoming WebHooks Integration</strong> button to add a new incoming webhook of your own. <br/>
+<img src="http://i.imgur.com/R8UPaoe.png" alt="Incoming WebHooks"/><br/>
+Copy the generated <strong>WebHook URL</strong> and store it somewhere, you will need it later. You can also change the name/icon/description of your slack bot here.</p>
+
+<h3 id="toc_7">2. Create a simple web crawler in python</h3>
+
+<p>Now we will create a python program to do the web crawling and send the message. For html parsing, we will be using BeautifulSoup4 and lxml here. Install it using the following command if you don&#39;t already them installed:</p>
+
+<pre><code class="language-python">pip install beautifulsoup4 lxml
+</code></pre>
+
+<p>Now create a new python script file, <strong>scraper.py</strong> like this:<br/>
+First import all needed libraries.</p>
+
+<pre><code class="language-python"># Import all needed libraries
+from bs4 import BeautifulSoup as bs
+import urllib.request
+import threading
+import requests
+import json
+import time
+</code></pre>
+
+<p>Then add a function called <strong>checkStatus</strong> to do web crawling.</p>
+
+<pre><code class="language-python">def checkStatus():
+    # Function that checks a specific webpage and returns the information as string.
+    url = &#39;https://stackoverflow.com/questions&#39; # The URL of sltackoverflow.
+    headers = {
+                &quot;User-Agent&quot;: &quot;Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:47.0) Gecko/20100101 Firefox/47.0&quot;,
+                } # Add browser header to your http request to avoid blocking.
+    req = urllib.request.Request(url=url, headers=headers)
+    try:
+        page = urllib.request.urlopen(req)
+    except:
+        return &#39;503: service unavailable, try again later.&#39;
+    soup = bs(page, &quot;lxml&quot;)
+    count = soup.find(&quot;div&quot;, class_=&#39;summarycount al&#39;)
+    return count.string
+</code></pre>
+
+<p>Then add a function called <strong>notify</strong> to send data to your slack channel using incoming webhook.</p>
+
+<pre><code class="language-python">def notify(data):
+    # Function that send data in a string to your slack channel using incoming webhook
+    slack_url = &#39;[PASTE YOUR GENERATED INCOMING WEBHOOK URL HERE]&#39;
+    requests.post(slack_url, data = json.dumps({
+            &#39;text&#39;: data,
+            &#39;username&#39;: &#39;Tornado-webhook-notify&#39;,
+            &#39;icon_emoji&#39;: &#39;:bulb:&#39;,
+            &#39;link_names&#39;: 1,
+        }))
+</code></pre>
+
+<p>Create a python thread class to be able to run some function at some specified time interval.</p>
+
+<pre><code class="language-python"># Create a recursive thread to run the checkup every 1 minute.
+class RecursiveThread(threading.Thread):
+    def __init__(self, event):
+        threading.Thread.__init__(self)
+        self.stopped = event
+
+    def run(self):
+        # Set the number to 60.0 to run every 1 minute.
+        while not self.stopped.wait(60.0): 
+            status = checkStatus()
+            notify(&#39;The total question number is: &#39; + status)
+</code></pre>
+
+<p>Then at last call these functions and classes to check the web site for 3 minutes.</p>
+
+<pre><code class="language-python">if __name__ == &#39;__main__&#39;:
+        # Create the event used to stop the thread.
+        stopFlag = threading.Event() 
+        # Instantialize the thread.
+        thread = RecursiveThread(stopFlag)
+        # Start the thread.
+        thread.start()
+        # Wait for some time(3 minutes).
+        time.sleep(180.0)
+        # Use the flag to stop the thread.
+        stopFlag.set()
+</code></pre>
+
+<p>If successful, you shoud be able to see the message telling you the current stackoverflow question number 3 times in your slack channel.</p>
+
+<p><img src="http://i.imgur.com/Usg0YdZ.png" alt="slack message"/></p>
+
+<h2 id="toc_8">Add more control using outgoing webhooks</h2>
+
+<p>The above slack bot is already quite practically useful(you can do a bunch of things like auto checking the price of a apecific item in an online store and such folloing the same logic), but to add more control of the bot behavior, we need the outgoing webhooks. In order to use outgoing webhook, you need a server machine that can be accessed from the internet. Once you have the server setup, you only need to add a server logic that listens to the POST request from your slack channel and responses to it. Python frameworks like <a href="http://www.tornadoweb.org/en/stable/">Tornado</a> and <a href="https://www.djangoproject.com/">Django</a> can help you do this relatively easily.<br/>
+Setting up a server to handle RESTful APIs is a rather broad topic and I won&#39;t do it here. It also seems that slack is deprecating the outgoing webhooks as well.<br/>
+<img src="http://i.imgur.com/Mmk6B6d.png" alt="deprecating outgoing webhook"/><br/>
+Maybe I will write about building slack apps using their latest APIs in the future. Also I think it is noteworthy that there are alternatives to slack like <a href="https://rocket.chat/">Rocket.Chat</a> that allows the user to store their messages and information in their own servers for credential reasons(this is impossible with slack). So maybe it&#39;s better to these alternatives instead.</p>
+
+<div class="footnotes">
+<hr/>
+<ol>
+
+<li id="fn1">
+<p><a href="https://en.wikipedia.org/wiki/Slack_(software)">Slack (software) from Wikipedia</a>&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p><a href="https://en.wikipedia.org/wiki/Webhook">Webhook from Wikipedia</a>&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Some notes on the use of "sed" command for text processing automation]]></title>
+    <link href="https://superkerokero.github.io/15152598378572.html"/>
+    <updated>2018-01-07T02:30:37+09:00</updated>
+    <id>https://superkerokero.github.io/15152598378572.html</id>
+    <content type="html"><![CDATA[
+<p><strong>sed</strong>, short for &quot;stream editor&quot;, allows you to filter and transform text. A stream editor is used to perform basic text transformations on an input stream (a file, or input from a pipeline). While in some ways similar to an editor which permits scripted edits (such as ed), <strong>sed</strong> works by making only one pass over the input(s), and is consequently more efficient. But it is <strong>sed</strong>&#39;s ability to filter text in a pipeline which particularly distinguishes it from other types of editors.<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup></p>
+
+<span id="more"></span><!-- more -->
+
+<h2 id="toc_0">&quot;In-place&quot; mode</h2>
+
+<table>
+<thead>
+<tr>
+<th>Options</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>-n,--quiet, --silent</td>
+<td>Suppress automatic printing of pattern space.</td>
+</tr>
+<tr>
+<td>-e script, --expression=script</td>
+<td>Add the script script to the commands to be executed.</td>
+</tr>
+<tr>
+<td>-i[SUFFIX], --in-place[=SUFFIX]</td>
+<td>Edit files in place (this makes a backup with file extension SUFFIX, if SUFFIX is supplied).</td>
+</tr>
+</tbody>
+</table>
+
+<p>The &quot;-i&quot; option is used to make modifications to files immediately. You can also make backups if you offer &quot;SUFFIX&quot; specifications as well. The commonly used &quot;-e&quot; option doesn&#39;t modify the files.</p>
+
+<h2 id="toc_1">Use inside bash scripts</h2>
+
+<p>Using <strong>sed</strong> inside some bash script is an elegant way to exploit its true power. But here are some pitfalls you might come across along the way. If you like to <strong>echo</strong> the commands you want to excute before the actual excution, you might get the error &quot; :sed: -e expression #1, char 1: unknown command: &#39; &quot; &#39; &quot;.<br/>
+Below is a typical case:</p>
+
+<pre><code class="language-bash">inFile=&quot;$WORK/${SimName}.in&quot;
+replaceCmd=&quot;sed &#39;s/sim.dat/${SimName}.dat/g&#39; $inFile&quot;
+echo $replaceCmd
+$replaceCmd
+</code></pre>
+
+<p>It seems that the single quotes inside the string &quot;replaceCmd&quot; weren&#39;t recongized by the <strong>sed</strong> command. </p>
+
+<p>One way to get across this problem is to use <strong>eval</strong> command.<br/>
+Instead of using </p>
+
+<pre><code class="language-bash">$replaceCmd
+</code></pre>
+
+<p>, you can use </p>
+
+<pre><code class="language-bash">eval &quot;$replaceCmd&quot;
+</code></pre>
+
+<p>This will make the <strong>sed</strong> command work properly. <br/>
+But using <strong>eval</strong> is in general not recommended due to security reasons.<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup></p>
+
+<p>The recommended method is to wrap the <strong>sed</strong> command inside a function:</p>
+
+<pre><code class="language-bash">replaceCmd(){
+    sed &quot;s/sim.dat/$1.dat/g&quot; &quot;$2&quot;
+}
+inFile=&quot;$work/$SimName.in&quot;
+replaceCmd &quot;$SimName&quot; &quot;$inFile&quot;
+</code></pre>
+
+<p>This method is found in LinuxQustions.org forum.<sup id="fnref3"><a href="#fn3" rel="footnote">3</a></sup></p>
+
+<blockquote>
+<p>Oh, hells no! Never, and I mean NEVER, use eval for something as trivial as this. Indeed, you should only very rarely need it at all. It can be quite a security risk, and is almost never really necessary in general scripting.</p>
+
+<p>In addition, variables are for storing data, not code. The spaces, quotes, and other special characters cease to be special when in a variable (unless the expansion is unquoted, then some of them still have an effect, but likely not the one you want; see my next point), and in any case leads to unclear, obfuscated code flow. If you need repeated use of the same command, don&#39;t put it inside a variable, use a function.</p>
+
+<p>A second problem here is that if the sed command is surrounded by single quotes, the variable inside them does not get expanded. No quotes is even worse, as the shell attempts to perform word-splitting and glob expansion after the substitution.</p>
+</blockquote>
+
+<div class="footnotes">
+<hr/>
+<ol>
+
+<li id="fn1">
+<p><a href="https://www.computerhope.com/unix/used.htm">Computer Hope: Linux sed command</a>&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p><a href="http://mywiki.wooledge.org/BashFAQ/048">Eval command and security issues</a>&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn3">
+<p><a href="http://www.linuxquestions.org/questions/linux-newbie-8/sed-gives-sed-e-expression-1-char-1-unknown-command-%60%27%27-947056/">[SOLVED] sed gives :sed: -e expression #1, char 1: unknown command: `&#39;&#39;</a>&nbsp;<a href="#fnref3" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Markdown syntax guide full version]]></title>
+    <link href="https://superkerokero.github.io/15152585359421.html"/>
+    <updated>2018-01-07T02:08:55+09:00</updated>
+    <id>https://superkerokero.github.io/15152585359421.html</id>
+    <content type="html"><![CDATA[
+<ul>
+<li><a href="#overview">Overview</a>
+
+<ul>
+<li><a href="#philosophy">Philosophy</a></li>
+<li><a href="#html">Inline HTML</a></li>
+<li><a href="#autoescape">Automatic Escaping for Special Characters</a></li>
+</ul></li>
+<li><a href="#block">Block Elements</a>
+
+<ul>
+<li><a href="#p">Paragraphs and Line Breaks</a></li>
+<li><a href="#header">Headers</a></li>
+<li><a href="#blockquote">Blockquotes</a></li>
+<li><a href="#list">Lists</a></li>
+<li><a href="#precode">Code Blocks</a></li>
+<li><a href="#hr">Horizontal Rules</a></li>
+</ul></li>
+<li><a href="#span">Span Elements</a>
+
+<ul>
+<li><a href="#link">Links</a></li>
+<li><a href="#em">Emphasis</a></li>
+<li><a href="#code">Code</a></li>
+<li><a href="#img">Images</a></li>
+</ul></li>
+<li><a href="#misc">Miscellaneous</a>
+
+<ul>
+<li><a href="#backslash">Backslash Escapes</a></li>
+<li><a href="#autolink">Automatic Links</a></li>
+</ul></li>
+</ul>
+
+<span id="more"></span><!-- more -->
+
+<p><strong>Note:</strong> This document is itself written using Markdown; you<br/>
+can <a href="/projects/markdown/syntax.text">see the source for it by adding &#39;.text&#39; to the URL</a>.</p>
+
+<hr/>
+
+<h2 id="toc_0">Overview</h2>
+
+<p><a id="overview"></a></p>
+
+<h3 id="toc_1">Philosophy</h3>
+
+<p><a id="philosophy"></a></p>
+
+<p>Markdown is intended to be as easy-to-read and easy-to-write as is feasible.</p>
+
+<p>Readability, however, is emphasized above all else. A Markdown-formatted<br/>
+document should be publishable as-is, as plain text, without looking<br/>
+like it&#39;s been marked up with tags or formatting instructions. While<br/>
+Markdown&#39;s syntax has been influenced by several existing text-to-HTML<br/>
+filters -- including <a href="http://docutils.sourceforge.net/mirror/setext.html">Setext</a>, <a href="http://www.aaronsw.com/2002/atx/">atx</a>, <a href="http://textism.com/tools/textile/">Textile</a>, <a href="http://docutils.sourceforge.net/rst.html">reStructuredText</a>,<br/>
+<a href="http://www.triptico.com/software/grutatxt.html">Grutatext</a>, and <a href="http://ettext.taint.org/doc/">EtText</a> -- the single biggest source of<br/>
+inspiration for Markdown&#39;s syntax is the format of plain text email.</p>
+
+<p>To this end, Markdown&#39;s syntax is comprised entirely of punctuation<br/>
+characters, which punctuation characters have been carefully chosen so<br/>
+as to look like what they mean. E.g., asterisks around a word actually<br/>
+look like *emphasis*. Markdown lists look like, well, lists. Even<br/>
+blockquotes look like quoted passages of text, assuming you&#39;ve ever<br/>
+used email.</p>
+
+<h3 id="toc_2">Inline HTML</h3>
+
+<p><a id="html"></a></p>
+
+<p>Markdown&#39;s syntax is intended for one purpose: to be used as a<br/>
+format for <em>writing</em> for the web.</p>
+
+<p>Markdown is not a replacement for HTML, or even close to it. Its<br/>
+syntax is very small, corresponding only to a very small subset of<br/>
+HTML tags. The idea is <em>not</em> to create a syntax that makes it easier<br/>
+to insert HTML tags. In my opinion, HTML tags are already easy to<br/>
+insert. The idea for Markdown is to make it easy to read, write, and<br/>
+edit prose. HTML is a <em>publishing</em> format; Markdown is a <em>writing</em><br/>
+format. Thus, Markdown&#39;s formatting syntax only addresses issues that<br/>
+can be conveyed in plain text.</p>
+
+<p>For any markup that is not covered by Markdown&#39;s syntax, you simply<br/>
+use HTML itself. There&#39;s no need to preface it or delimit it to<br/>
+indicate that you&#39;re switching from Markdown to HTML; you just use<br/>
+the tags.</p>
+
+<p>The only restrictions are that block-level HTML elements -- e.g. <code>&lt;div&gt;</code>,<br/>
+<code>&lt;table&gt;</code>, <code>&lt;pre&gt;</code>, <code>&lt;p&gt;</code>, etc. -- must be separated from surrounding<br/>
+content by blank lines, and the start and end tags of the block should<br/>
+not be indented with tabs or spaces. Markdown is smart enough not<br/>
+to add extra (unwanted) <code>&lt;p&gt;</code> tags around HTML block-level tags.</p>
+
+<p>For example, to add an HTML table to a Markdown article:</p>
+
+<pre><code>This is a regular paragraph.
+
+&lt;table&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Foo&lt;/td&gt;
+    &lt;/tr&gt;
+&lt;/table&gt;
+
+This is another regular paragraph.
+</code></pre>
+
+<p>Note that Markdown formatting syntax is not processed within block-level<br/>
+HTML tags. E.g., you can&#39;t use Markdown-style <code>*emphasis*</code> inside an<br/>
+HTML block.</p>
+
+<p>Span-level HTML tags -- e.g. <code>&lt;span&gt;</code>, <code>&lt;cite&gt;</code>, or <code>&lt;del&gt;</code> -- can be<br/>
+used anywhere in a Markdown paragraph, list item, or header. If you<br/>
+want, you can even use HTML tags instead of Markdown formatting; e.g. if<br/>
+you&#39;d prefer to use HTML <code>&lt;a&gt;</code> or <code>&lt;img&gt;</code> tags instead of Markdown&#39;s<br/>
+link or image syntax, go right ahead.</p>
+
+<p>Unlike block-level HTML tags, Markdown syntax <em>is</em> processed within<br/>
+span-level tags.</p>
+
+<h3 id="toc_3">Automatic Escaping for Special Characters</h3>
+
+<p><a id="autoescape"></a></p>
+
+<p>In HTML, there are two characters that demand special treatment: <code>&lt;</code><br/>
+and <code>&amp;</code>. Left angle brackets are used to start tags; ampersands are<br/>
+used to denote HTML entities. If you want to use them as literal<br/>
+characters, you must escape them as entities, e.g. <code>&amp;lt;</code>, and<br/>
+<code>&amp;amp;</code>.</p>
+
+<p>Ampersands in particular are bedeviling for web writers. If you want to<br/>
+write about &#39;AT&amp;T&#39;, you need to write &#39;<code>AT&amp;amp;T</code>&#39;. You even need to<br/>
+escape ampersands within URLs. Thus, if you want to link to:</p>
+
+<pre><code>http://images.google.com/images?num=30&amp;q=larry+bird
+</code></pre>
+
+<p>you need to encode the URL as:</p>
+
+<pre><code>http://images.google.com/images?num=30&amp;amp;q=larry+bird
+</code></pre>
+
+<p>in your anchor tag <code>href</code> attribute. Needless to say, this is easy to<br/>
+forget, and is probably the single most common source of HTML validation<br/>
+errors in otherwise well-marked-up web sites.</p>
+
+<p>Markdown allows you to use these characters naturally, taking care of<br/>
+all the necessary escaping for you. If you use an ampersand as part of<br/>
+an HTML entity, it remains unchanged; otherwise it will be translated<br/>
+into <code>&amp;amp;</code>.</p>
+
+<p>So, if you want to include a copyright symbol in your article, you can write:</p>
+
+<pre><code>&amp;copy;
+</code></pre>
+
+<p>and Markdown will leave it alone. But if you write:</p>
+
+<pre><code>AT&amp;T
+</code></pre>
+
+<p>Markdown will translate it to:</p>
+
+<pre><code>AT&amp;amp;T
+</code></pre>
+
+<p>Similarly, because Markdown supports <a href="#html">inline HTML</a>, if you use<br/>
+angle brackets as delimiters for HTML tags, Markdown will treat them as<br/>
+such. But if you write:</p>
+
+<pre><code>4 &lt; 5
+</code></pre>
+
+<p>Markdown will translate it to:</p>
+
+<pre><code>4 &amp;lt; 5
+</code></pre>
+
+<p>However, inside Markdown code spans and blocks, angle brackets and<br/>
+ampersands are <em>always</em> encoded automatically. This makes it easy to use<br/>
+Markdown to write about HTML code. (As opposed to raw HTML, which is a<br/>
+terrible format for writing about HTML syntax, because every single <code>&lt;</code><br/>
+and <code>&amp;</code> in your example code needs to be escaped.)</p>
+
+<hr/>
+
+<h2 id="toc_4">Block Elements</h2>
+
+<p><a id="block"></a></p>
+
+<h3 id="toc_5">Paragraphs and Line Breaks</h3>
+
+<p><a id="p"></a></p>
+
+<p>A paragraph is simply one or more consecutive lines of text, separated<br/>
+by one or more blank lines. (A blank line is any line that looks like a<br/>
+blank line -- a line containing nothing but spaces or tabs is considered<br/>
+blank.) Normal paragraphs should not be indented with spaces or tabs.</p>
+
+<p>The implication of the &quot;one or more consecutive lines of text&quot; rule is<br/>
+that Markdown supports &quot;hard-wrapped&quot; text paragraphs. This differs<br/>
+significantly from most other text-to-HTML formatters (including Movable<br/>
+Type&#39;s &quot;Convert Line Breaks&quot; option) which translate every line break<br/>
+character in a paragraph into a <code>&lt;br /&gt;</code> tag.</p>
+
+<p>When you <em>do</em> want to insert a <code>&lt;br /&gt;</code> break tag using Markdown, you<br/>
+end a line with two or more spaces, then type return.</p>
+
+<p>Yes, this takes a tad more effort to create a <code>&lt;br /&gt;</code>, but a simplistic<br/>
+&quot;every line break is a <code>&lt;br /&gt;</code>&quot; rule wouldn&#39;t work for Markdown.<br/>
+Markdown&#39;s email-style <a href="#blockquote">blockquoting</a> and multi-paragraph <a href="#list">list items</a><br/>
+work best -- and look better -- when you format them with hard breaks.</p>
+
+<h3 id="toc_6">Headers</h3>
+
+<p><a id="header"></a></p>
+
+<p>Markdown supports two styles of headers, <a href="http://docutils.sourceforge.net/mirror/setext.html">Setext</a> and <a href="http://www.aaronsw.com/2002/atx/">atx</a>.</p>
+
+<p>Setext-style headers are &quot;underlined&quot; using equal signs (for first-level<br/>
+headers) and dashes (for second-level headers). For example:</p>
+
+<pre><code>This is an H1
+=============
+
+This is an H2
+-------------
+</code></pre>
+
+<p>Any number of underlining <code>=</code>&#39;s or <code>-</code>&#39;s will work.</p>
+
+<p>Atx-style headers use 1-6 hash characters at the start of the line,<br/>
+corresponding to header levels 1-6. For example:</p>
+
+<pre><code># This is an H1
+
+## This is an H2
+
+###### This is an H6
+</code></pre>
+
+<p>Optionally, you may &quot;close&quot; atx-style headers. This is purely<br/>
+cosmetic -- you can use this if you think it looks better. The<br/>
+closing hashes don&#39;t even need to match the number of hashes<br/>
+used to open the header. (The number of opening hashes<br/>
+determines the header level.) :</p>
+
+<pre><code># This is an H1 #
+
+## This is an H2 ##
+
+### This is an H3 ######
+</code></pre>
+
+<h3 id="toc_7">Blockquotes</h3>
+
+<p><a id="blockquote"></a></p>
+
+<p>Markdown uses email-style <code>&gt;</code> characters for blockquoting. If you&#39;re<br/>
+familiar with quoting passages of text in an email message, then you<br/>
+know how to create a blockquote in Markdown. It looks best if you hard<br/>
+wrap the text and put a <code>&gt;</code> before every line:</p>
+
+<pre><code>&gt; This is a blockquote with two paragraphs. Lorem ipsum dolor sit amet,
+&gt; consectetuer adipiscing elit. Aliquam hendrerit mi posuere lectus.
+&gt; Vestibulum enim wisi, viverra nec, fringilla in, laoreet vitae, risus.
+&gt; 
+&gt; Donec sit amet nisl. Aliquam semper ipsum sit amet velit. Suspendisse
+&gt; id sem consectetuer libero luctus adipiscing.
+</code></pre>
+
+<p>Markdown allows you to be lazy and only put the <code>&gt;</code> before the first<br/>
+line of a hard-wrapped paragraph:</p>
+
+<pre><code>&gt; This is a blockquote with two paragraphs. Lorem ipsum dolor sit amet,
+consectetuer adipiscing elit. Aliquam hendrerit mi posuere lectus.
+Vestibulum enim wisi, viverra nec, fringilla in, laoreet vitae, risus.
+
+&gt; Donec sit amet nisl. Aliquam semper ipsum sit amet velit. Suspendisse
+id sem consectetuer libero luctus adipiscing.
+</code></pre>
+
+<p>Blockquotes can be nested (i.e. a blockquote-in-a-blockquote) by<br/>
+adding additional levels of <code>&gt;</code>:</p>
+
+<pre><code>&gt; This is the first level of quoting.
+&gt;
+&gt; &gt; This is nested blockquote.
+&gt;
+&gt; Back to the first level.
+</code></pre>
+
+<p>Blockquotes can contain other Markdown elements, including headers, lists,<br/>
+and code blocks:</p>
+
+<pre><code>&gt; ## This is a header.
+&gt; 
+&gt; 1.   This is the first list item.
+&gt; 2.   This is the second list item.
+&gt; 
+&gt; Here&#39;s some example code:
+&gt; 
+&gt;     return shell_exec(&quot;echo $input | $markdown_script&quot;);
+</code></pre>
+
+<p>Any decent text editor should make email-style quoting easy. For<br/>
+example, with BBEdit, you can make a selection and choose Increase<br/>
+Quote Level from the Text menu.</p>
+
+<h3 id="toc_8">Lists</h3>
+
+<p><a id="list"></a></p>
+
+<p>Markdown supports ordered (numbered) and unordered (bulleted) lists.</p>
+
+<p>Unordered lists use asterisks, pluses, and hyphens -- interchangably<br/>
+-- as list markers:</p>
+
+<pre><code>*   Red
+*   Green
+*   Blue
+</code></pre>
+
+<p>is equivalent to:</p>
+
+<pre><code>+   Red
++   Green
++   Blue
+</code></pre>
+
+<p>and:</p>
+
+<pre><code>-   Red
+-   Green
+-   Blue
+</code></pre>
+
+<p>Ordered lists use numbers followed by periods:</p>
+
+<pre><code>1.  Bird
+2.  McHale
+3.  Parish
+</code></pre>
+
+<p>It&#39;s important to note that the actual numbers you use to mark the<br/>
+list have no effect on the HTML output Markdown produces. The HTML<br/>
+Markdown produces from the above list is:</p>
+
+<pre><code>&lt;ol&gt;
+&lt;li&gt;Bird&lt;/li&gt;
+&lt;li&gt;McHale&lt;/li&gt;
+&lt;li&gt;Parish&lt;/li&gt;
+&lt;/ol&gt;
+</code></pre>
+
+<p>If you instead wrote the list in Markdown like this:</p>
+
+<pre><code>1.  Bird
+1.  McHale
+1.  Parish
+</code></pre>
+
+<p>or even:</p>
+
+<pre><code>3. Bird
+1. McHale
+8. Parish
+</code></pre>
+
+<p>you&#39;d get the exact same HTML output. The point is, if you want to,<br/>
+you can use ordinal numbers in your ordered Markdown lists, so that<br/>
+the numbers in your source match the numbers in your published HTML.<br/>
+But if you want to be lazy, you don&#39;t have to.</p>
+
+<p>If you do use lazy list numbering, however, you should still start the<br/>
+list with the number 1. At some point in the future, Markdown may support<br/>
+starting ordered lists at an arbitrary number.</p>
+
+<p>List markers typically start at the left margin, but may be indented by<br/>
+up to three spaces. List markers must be followed by one or more spaces<br/>
+or a tab.</p>
+
+<p>To make lists look nice, you can wrap items with hanging indents:</p>
+
+<pre><code>*   Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
+    Aliquam hendrerit mi posuere lectus. Vestibulum enim wisi,
+    viverra nec, fringilla in, laoreet vitae, risus.
+*   Donec sit amet nisl. Aliquam semper ipsum sit amet velit.
+    Suspendisse id sem consectetuer libero luctus adipiscing.
+</code></pre>
+
+<p>But if you want to be lazy, you don&#39;t have to:</p>
+
+<pre><code>*   Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
+Aliquam hendrerit mi posuere lectus. Vestibulum enim wisi,
+viverra nec, fringilla in, laoreet vitae, risus.
+*   Donec sit amet nisl. Aliquam semper ipsum sit amet velit.
+Suspendisse id sem consectetuer libero luctus adipiscing.
+</code></pre>
+
+<p>If list items are separated by blank lines, Markdown will wrap the<br/>
+items in <code>&lt;p&gt;</code> tags in the HTML output. For example, this input:</p>
+
+<pre><code>*   Bird
+*   Magic
+</code></pre>
+
+<p>will turn into:</p>
+
+<pre><code>&lt;ul&gt;
+&lt;li&gt;Bird&lt;/li&gt;
+&lt;li&gt;Magic&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+
+<p>But this:</p>
+
+<pre><code>*   Bird
+
+*   Magic
+</code></pre>
+
+<p>will turn into:</p>
+
+<pre><code>&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;Bird&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;Magic&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+
+<p>List items may consist of multiple paragraphs. Each subsequent<br/>
+paragraph in a list item must be indented by either 4 spaces<br/>
+or one tab:</p>
+
+<pre><code>1.  This is a list item with two paragraphs. Lorem ipsum dolor
+    sit amet, consectetuer adipiscing elit. Aliquam hendrerit
+    mi posuere lectus.
+
+    Vestibulum enim wisi, viverra nec, fringilla in, laoreet
+    vitae, risus. Donec sit amet nisl. Aliquam semper ipsum
+    sit amet velit.
+
+2.  Suspendisse id sem consectetuer libero luctus adipiscing.
+</code></pre>
+
+<p>It looks nice if you indent every line of the subsequent<br/>
+paragraphs, but here again, Markdown will allow you to be<br/>
+lazy:</p>
+
+<pre><code>*   This is a list item with two paragraphs.
+
+    This is the second paragraph in the list item. You&#39;re
+only required to indent the first line. Lorem ipsum dolor
+sit amet, consectetuer adipiscing elit.
+
+*   Another item in the same list.
+</code></pre>
+
+<p>To put a blockquote within a list item, the blockquote&#39;s <code>&gt;</code><br/>
+delimiters need to be indented:</p>
+
+<pre><code>*   A list item with a blockquote:
+
+    &gt; This is a blockquote
+    &gt; inside a list item.
+</code></pre>
+
+<p>To put a code block within a list item, the code block needs<br/>
+to be indented <em>twice</em> -- 8 spaces or two tabs:</p>
+
+<pre><code>*   A list item with a code block:
+
+        &lt;code goes here&gt;
+</code></pre>
+
+<p>It&#39;s worth noting that it&#39;s possible to trigger an ordered list by<br/>
+accident, by writing something like this:</p>
+
+<pre><code>1986. What a great season.
+</code></pre>
+
+<p>In other words, a <em>number-period-space</em> sequence at the beginning of a<br/>
+line. To avoid this, you can backslash-escape the period:</p>
+
+<pre><code>1986\. What a great season.
+</code></pre>
+
+<h3 id="toc_9">Code Blocks</h3>
+
+<p><a id="precode"></a></p>
+
+<p>Pre-formatted code blocks are used for writing about programming or<br/>
+markup source code. Rather than forming normal paragraphs, the lines<br/>
+of a code block are interpreted literally. Markdown wraps a code block<br/>
+in both <code>&lt;pre&gt;</code> and <code>&lt;code&gt;</code> tags.</p>
+
+<p>To produce a code block in Markdown, simply indent every line of the<br/>
+block by at least 4 spaces or 1 tab. For example, given this input:</p>
+
+<pre><code>This is a normal paragraph:
+
+    This is a code block.
+</code></pre>
+
+<p>Markdown will generate:</p>
+
+<pre><code>&lt;p&gt;This is a normal paragraph:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;This is a code block.
+&lt;/code&gt;&lt;/pre&gt;
+</code></pre>
+
+<p>One level of indentation -- 4 spaces or 1 tab -- is removed from each<br/>
+line of the code block. For example, this:</p>
+
+<pre><code>Here is an example of AppleScript:
+
+    tell application &quot;Foo&quot;
+        beep
+    end tell
+</code></pre>
+
+<p>will turn into:</p>
+
+<pre><code>&lt;p&gt;Here is an example of AppleScript:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;tell application &quot;Foo&quot;
+    beep
+end tell
+&lt;/code&gt;&lt;/pre&gt;
+</code></pre>
+
+<p>A code block continues until it reaches a line that is not indented<br/>
+(or the end of the article).</p>
+
+<p>Within a code block, ampersands (<code>&amp;</code>) and angle brackets (<code>&lt;</code> and <code>&gt;</code>)<br/>
+are automatically converted into HTML entities. This makes it very<br/>
+easy to include example HTML source code using Markdown -- just paste<br/>
+it and indent it, and Markdown will handle the hassle of encoding the<br/>
+ampersands and angle brackets. For example, this:</p>
+
+<pre><code>    &lt;div class=&quot;footer&quot;&gt;
+        &amp;copy; 2004 Foo Corporation
+    &lt;/div&gt;
+</code></pre>
+
+<p>will turn into:</p>
+
+<pre><code>&lt;pre&gt;&lt;code&gt;&amp;lt;div class=&quot;footer&quot;&amp;gt;
+    &amp;amp;copy; 2004 Foo Corporation
+&amp;lt;/div&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+</code></pre>
+
+<p>Regular Markdown syntax is not processed within code blocks. E.g.,<br/>
+asterisks are just literal asterisks within a code block. This means<br/>
+it&#39;s also easy to use Markdown to write about Markdown&#39;s own syntax.</p>
+
+<h3 id="toc_10">Horizontal Rules</h3>
+
+<p><a id="hr"></a></p>
+
+<p>You can produce a horizontal rule tag (<code>&lt;hr /&gt;</code>) by placing three or<br/>
+more hyphens, asterisks, or underscores on a line by themselves. If you<br/>
+wish, you may use spaces between the hyphens or asterisks. Each of the<br/>
+following lines will produce a horizontal rule:</p>
+
+<pre><code>* * *
+
+***
+
+*****
+
+- - -
+
+---------------------------------------
+</code></pre>
+
+<hr/>
+
+<h2 id="toc_11">Span Elements</h2>
+
+<p><a id="span"></a></p>
+
+<h3 id="toc_12">Links</h3>
+
+<p><a id="link"></a></p>
+
+<p>Markdown supports two style of links: <em>inline</em> and <em>reference</em>.</p>
+
+<p>In both styles, the link text is delimited by [square brackets].</p>
+
+<p>To create an inline link, use a set of regular parentheses immediately<br/>
+after the link text&#39;s closing square bracket. Inside the parentheses,<br/>
+put the URL where you want the link to point, along with an <em>optional</em><br/>
+title for the link, surrounded in quotes. For example:</p>
+
+<pre><code>This is [an example](http://example.com/ &quot;Title&quot;) inline link.
+
+[This link](http://example.net/) has no title attribute.
+</code></pre>
+
+<p>Will produce:</p>
+
+<pre><code>&lt;p&gt;This is &lt;a href=&quot;http://example.com/&quot; title=&quot;Title&quot;&gt;
+an example&lt;/a&gt; inline link.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://example.net/&quot;&gt;This link&lt;/a&gt; has no
+title attribute.&lt;/p&gt;
+</code></pre>
+
+<p>If you&#39;re referring to a local resource on the same server, you can<br/>
+use relative paths:</p>
+
+<pre><code>See my [About](/about/) page for details.   
+</code></pre>
+
+<p>Reference-style links use a second set of square brackets, inside<br/>
+which you place a label of your choosing to identify the link:</p>
+
+<pre><code>This is [an example][id] reference-style link.
+</code></pre>
+
+<p>You can optionally use a space to separate the sets of brackets:</p>
+
+<pre><code>This is [an example] [id] reference-style link.
+</code></pre>
+
+<p>Then, anywhere in the document, you define your link label like this,<br/>
+on a line by itself:</p>
+
+<pre><code>[id]: http://example.com/  &quot;Optional Title Here&quot;
+</code></pre>
+
+<p>That is:</p>
+
+<ul>
+<li>  Square brackets containing the link identifier (optionally
+indented from the left margin using up to three spaces);</li>
+<li>  followed by a colon;</li>
+<li>  followed by one or more spaces (or tabs);</li>
+<li>  followed by the URL for the link;</li>
+<li>  optionally followed by a title attribute for the link, enclosed
+in double or single quotes, or enclosed in parentheses.</li>
+</ul>
+
+<p>The following three link definitions are equivalent:</p>
+
+<pre><code>[foo]: http://example.com/  &quot;Optional Title Here&quot;
+[foo]: http://example.com/  &#39;Optional Title Here&#39;
+[foo]: http://example.com/  (Optional Title Here)
+</code></pre>
+
+<p><strong>Note:</strong> There is a known bug in Markdown.pl 1.0.1 which prevents<br/>
+single quotes from being used to delimit link titles.</p>
+
+<p>The link URL may, optionally, be surrounded by angle brackets:</p>
+
+<pre><code>[id]: &lt;http://example.com/&gt;  &quot;Optional Title Here&quot;
+</code></pre>
+
+<p>You can put the title attribute on the next line and use extra spaces<br/>
+or tabs for padding, which tends to look better with longer URLs:</p>
+
+<pre><code>[id]: http://example.com/longish/path/to/resource/here
+    &quot;Optional Title Here&quot;
+</code></pre>
+
+<p>Link definitions are only used for creating links during Markdown<br/>
+processing, and are stripped from your document in the HTML output.</p>
+
+<p>Link definition names may consist of letters, numbers, spaces, and<br/>
+punctuation -- but they are <em>not</em> case sensitive. E.g. these two<br/>
+links:</p>
+
+<pre><code>[link text][a]
+[link text][A]
+</code></pre>
+
+<p>are equivalent.</p>
+
+<p>The <em>implicit link name</em> shortcut allows you to omit the name of the<br/>
+link, in which case the link text itself is used as the name.<br/>
+Just use an empty set of square brackets -- e.g., to link the word<br/>
+&quot;Google&quot; to the google.com web site, you could simply write:</p>
+
+<pre><code>[Google][]
+</code></pre>
+
+<p>And then define the link:</p>
+
+<pre><code>[Google]: http://google.com/
+</code></pre>
+
+<p>Because link names may contain spaces, this shortcut even works for<br/>
+multiple words in the link text:</p>
+
+<pre><code>Visit [Daring Fireball][] for more information.
+</code></pre>
+
+<p>And then define the link:</p>
+
+<pre><code>[Daring Fireball]: http://daringfireball.net/
+</code></pre>
+
+<p>Link definitions can be placed anywhere in your Markdown document. I<br/>
+tend to put them immediately after each paragraph in which they&#39;re<br/>
+used, but if you want, you can put them all at the end of your<br/>
+document, sort of like footnotes.</p>
+
+<p>Here&#39;s an example of reference links in action:</p>
+
+<pre><code>I get 10 times more traffic from [Google] [1] than from
+[Yahoo] [2] or [MSN] [3].
+
+  [1]: http://google.com/        &quot;Google&quot;
+  [2]: http://search.yahoo.com/  &quot;Yahoo Search&quot;
+  [3]: http://search.msn.com/    &quot;MSN Search&quot;
+</code></pre>
+
+<p>Using the implicit link name shortcut, you could instead write:</p>
+
+<pre><code>I get 10 times more traffic from [Google][] than from
+[Yahoo][] or [MSN][].
+
+  [google]: http://google.com/        &quot;Google&quot;
+  [yahoo]:  http://search.yahoo.com/  &quot;Yahoo Search&quot;
+  [msn]:    http://search.msn.com/    &quot;MSN Search&quot;
+</code></pre>
+
+<p>Both of the above examples will produce the following HTML output:</p>
+
+<pre><code>&lt;p&gt;I get 10 times more traffic from &lt;a href=&quot;http://google.com/&quot;
+title=&quot;Google&quot;&gt;Google&lt;/a&gt; than from
+&lt;a href=&quot;http://search.yahoo.com/&quot; title=&quot;Yahoo Search&quot;&gt;Yahoo&lt;/a&gt;
+or &lt;a href=&quot;http://search.msn.com/&quot; title=&quot;MSN Search&quot;&gt;MSN&lt;/a&gt;.&lt;/p&gt;
+</code></pre>
+
+<p>For comparison, here is the same paragraph written using<br/>
+Markdown&#39;s inline link style:</p>
+
+<pre><code>I get 10 times more traffic from [Google](http://google.com/ &quot;Google&quot;)
+than from [Yahoo](http://search.yahoo.com/ &quot;Yahoo Search&quot;) or
+[MSN](http://search.msn.com/ &quot;MSN Search&quot;).
+</code></pre>
+
+<p>The point of reference-style links is not that they&#39;re easier to<br/>
+write. The point is that with reference-style links, your document<br/>
+source is vastly more readable. Compare the above examples: using<br/>
+reference-style links, the paragraph itself is only 81 characters<br/>
+long; with inline-style links, it&#39;s 176 characters; and as raw HTML,<br/>
+it&#39;s 234 characters. In the raw HTML, there&#39;s more markup than there<br/>
+is text.</p>
+
+<p>With Markdown&#39;s reference-style links, a source document much more<br/>
+closely resembles the final output, as rendered in a browser. By<br/>
+allowing you to move the markup-related metadata out of the paragraph,<br/>
+you can add links without interrupting the narrative flow of your<br/>
+prose.</p>
+
+<h3 id="toc_13">Emphasis</h3>
+
+<p><a id="em"></a></p>
+
+<p>Markdown treats asterisks (<code>*</code>) and underscores (<code>_</code>) as indicators of<br/>
+emphasis. Text wrapped with one <code>*</code> or <code>_</code> will be wrapped with an<br/>
+HTML <code>&lt;em&gt;</code> tag; double <code>*</code>&#39;s or <code>_</code>&#39;s will be wrapped with an HTML<br/>
+<code>&lt;strong&gt;</code> tag. E.g., this input:</p>
+
+<pre><code>*single asterisks*
+
+_single underscores_
+
+**double asterisks**
+
+__double underscores__
+</code></pre>
+
+<p>will produce:</p>
+
+<pre><code>&lt;em&gt;single asterisks&lt;/em&gt;
+
+&lt;em&gt;single underscores&lt;/em&gt;
+
+&lt;strong&gt;double asterisks&lt;/strong&gt;
+
+&lt;strong&gt;double underscores&lt;/strong&gt;
+</code></pre>
+
+<p>You can use whichever style you prefer; the lone restriction is that<br/>
+the same character must be used to open and close an emphasis span.</p>
+
+<p>Emphasis can be used in the middle of a word:</p>
+
+<pre><code>un*frigging*believable
+</code></pre>
+
+<p>But if you surround an <code>*</code> or <code>_</code> with spaces, it&#39;ll be treated as a<br/>
+literal asterisk or underscore.</p>
+
+<p>To produce a literal asterisk or underscore at a position where it<br/>
+would otherwise be used as an emphasis delimiter, you can backslash<br/>
+escape it:</p>
+
+<pre><code>\*this text is surrounded by literal asterisks\*
+</code></pre>
+
+<h3 id="toc_14">Code</h3>
+
+<p><a id="code"></a></p>
+
+<p>To indicate a span of code, wrap it with backtick quotes (<code>`</code>).<br/>
+Unlike a pre-formatted code block, a code span indicates code within a<br/>
+normal paragraph. For example:</p>
+
+<pre><code>Use the `printf()` function.
+</code></pre>
+
+<p>will produce:</p>
+
+<pre><code>&lt;p&gt;Use the &lt;code&gt;printf()&lt;/code&gt; function.&lt;/p&gt;
+</code></pre>
+
+<p>To include a literal backtick character within a code span, you can use<br/>
+multiple backticks as the opening and closing delimiters:</p>
+
+<pre><code>``There is a literal backtick (`) here.``
+</code></pre>
+
+<p>which will produce this:</p>
+
+<pre><code>&lt;p&gt;&lt;code&gt;There is a literal backtick (`) here.&lt;/code&gt;&lt;/p&gt;
+</code></pre>
+
+<p>The backtick delimiters surrounding a code span may include spaces --<br/>
+one after the opening, one before the closing. This allows you to place<br/>
+literal backtick characters at the beginning or end of a code span:</p>
+
+<pre><code>A single backtick in a code span: `` ` ``
+
+A backtick-delimited string in a code span: `` `foo` ``
+</code></pre>
+
+<p>will produce:</p>
+
+<pre><code>&lt;p&gt;A single backtick in a code span: &lt;code&gt;`&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;A backtick-delimited string in a code span: &lt;code&gt;`foo`&lt;/code&gt;&lt;/p&gt;
+</code></pre>
+
+<p>With a code span, ampersands and angle brackets are encoded as HTML<br/>
+entities automatically, which makes it easy to include example HTML<br/>
+tags. Markdown will turn this:</p>
+
+<pre><code>Please don&#39;t use any `&lt;blink&gt;` tags.
+</code></pre>
+
+<p>into:</p>
+
+<pre><code>&lt;p&gt;Please don&#39;t use any &lt;code&gt;&amp;lt;blink&amp;gt;&lt;/code&gt; tags.&lt;/p&gt;
+</code></pre>
+
+<p>You can write this:</p>
+
+<pre><code>`&amp;#8212;` is the decimal-encoded equivalent of `&amp;mdash;`.
+</code></pre>
+
+<p>to produce:</p>
+
+<pre><code>&lt;p&gt;&lt;code&gt;&amp;amp;#8212;&lt;/code&gt; is the decimal-encoded
+equivalent of &lt;code&gt;&amp;amp;mdash;&lt;/code&gt;.&lt;/p&gt;
+</code></pre>
+
+<h3 id="toc_15">Images</h3>
+
+<p><a id="img"></a></p>
+
+<p>Admittedly, it&#39;s fairly difficult to devise a &quot;natural&quot; syntax for<br/>
+placing images into a plain text document format.</p>
+
+<p>Markdown uses an image syntax that is intended to resemble the syntax<br/>
+for links, allowing for two styles: <em>inline</em> and <em>reference</em>.</p>
+
+<p>Inline image syntax looks like this:</p>
+
+<pre><code>![Alt text](/path/to/img.jpg)
+
+![Alt text](/path/to/img.jpg &quot;Optional title&quot;)
+</code></pre>
+
+<p>That is:</p>
+
+<ul>
+<li>  An exclamation mark: <code>!</code>;</li>
+<li>  followed by a set of square brackets, containing the <code>alt</code>
+attribute text for the image;</li>
+<li>  followed by a set of parentheses, containing the URL or path to
+the image, and an optional <code>title</code> attribute enclosed in double
+or single quotes.</li>
+</ul>
+
+<p>Reference-style image syntax looks like this:</p>
+
+<pre><code>![Alt text][id]
+</code></pre>
+
+<p>Where &quot;id&quot; is the name of a defined image reference. Image references<br/>
+are defined using syntax identical to link references:</p>
+
+<pre><code>[id]: url/to/image  &quot;Optional title attribute&quot;
+</code></pre>
+
+<p>As of this writing, Markdown has no syntax for specifying the<br/>
+dimensions of an image; if this is important to you, you can simply<br/>
+use regular HTML <code>&lt;img&gt;</code> tags.</p>
+
+<hr/>
+
+<h2 id="toc_16">Miscellaneous</h2>
+
+<p><a id="misc"></a></p>
+
+<h3 id="toc_17">Automatic Links</h3>
+
+<p><a id="autolink"></a></p>
+
+<p>Markdown supports a shortcut style for creating &quot;automatic&quot; links for URLs and email addresses: simply surround the URL or email address with angle brackets. What this means is that if you want to show the actual text of a URL or email address, and also have it be a clickable link, you can do this:</p>
+
+<pre><code>&lt;http://example.com/&gt;
+</code></pre>
+
+<p>Markdown will turn this into:</p>
+
+<pre><code>&lt;a href=&quot;http://example.com/&quot;&gt;http://example.com/&lt;/a&gt;
+</code></pre>
+
+<p>Automatic links for email addresses work similarly, except that<br/>
+Markdown will also perform a bit of randomized decimal and hex<br/>
+entity-encoding to help obscure your address from address-harvesting<br/>
+spambots. For example, Markdown will turn this:</p>
+
+<pre><code>&lt;address@example.com&gt;
+</code></pre>
+
+<p>into something like this:</p>
+
+<pre><code>&lt;a href=&quot;&amp;#x6D;&amp;#x61;i&amp;#x6C;&amp;#x74;&amp;#x6F;:&amp;#x61;&amp;#x64;&amp;#x64;&amp;#x72;&amp;#x65;
+&amp;#115;&amp;#115;&amp;#64;&amp;#101;&amp;#120;&amp;#x61;&amp;#109;&amp;#x70;&amp;#x6C;e&amp;#x2E;&amp;#99;&amp;#111;
+&amp;#109;&quot;&gt;&amp;#x61;&amp;#x64;&amp;#x64;&amp;#x72;&amp;#x65;&amp;#115;&amp;#115;&amp;#64;&amp;#101;&amp;#120;&amp;#x61;
+&amp;#109;&amp;#x70;&amp;#x6C;e&amp;#x2E;&amp;#99;&amp;#111;&amp;#109;&lt;/a&gt;
+</code></pre>
+
+<p>which will render in a browser as a clickable link to &quot;<a href="mailto:address@example.com">address@example.com</a>&quot;.</p>
+
+<p>(This sort of entity-encoding trick will indeed fool many, if not<br/>
+most, address-harvesting bots, but it definitely won&#39;t fool all of<br/>
+them. It&#39;s better than nothing, but an address published in this way<br/>
+will probably eventually start receiving spam.)</p>
+
+<h3 id="toc_18">Backslash Escapes</h3>
+
+<p><a id="backslash"></a></p>
+
+<p>Markdown allows you to use backslash escapes to generate literal<br/>
+characters which would otherwise have special meaning in Markdown&#39;s<br/>
+formatting syntax. For example, if you wanted to surround a word<br/>
+with literal asterisks (instead of an HTML <code>&lt;em&gt;</code> tag), you can use<br/>
+backslashes before the asterisks, like this:</p>
+
+<pre><code>\*literal asterisks\*
+</code></pre>
+
+<p>Markdown provides backslash escapes for the following characters:</p>
+
+<pre><code>\   backslash
+`   backtick
+*   asterisk
+_   underscore
+{}  curly braces
+[]  square brackets
+()  parentheses
+#   hash mark
++   plus sign
+-   minus sign (hyphen)
+.   dot
+!   exclamation mark
+</code></pre>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How to disable Nouvean driver and Install CUDA 8.0 & cuDNN 5.1 on Fedora 17]]></title>
+    <link href="https://superkerokero.github.io/15152582683289.html"/>
+    <updated>2018-01-07T02:04:28+09:00</updated>
+    <id>https://superkerokero.github.io/15152582683289.html</id>
+    <content type="html"><![CDATA[
+<p>In order to take advantage of extra computational power from nVidia GPUs like Tesla, we need to install proper CUDA drivers on the system. The best choice is to use docker with nvidia-docker enabled GPU containers. The problem is, you can&#39;t install docker on older Linux systems like Fedora 17 ... In order to install docker, you need at least a Fedora version of 24. Sadly, sometimes upgrading the Linux OS for the server is not a viable option. </p>
+
+<span id="more"></span><!-- more -->
+
+<p>OK, we have to install the CUDA Toolkit and cuDNN libraries by ourselves now. This is still not quite easy for Linux systems, espesially the old ones. You have to solve following 2 problems to do this. </p>
+
+<ul>
+<li>Disable the x-window of the system</li>
+<li>Disable Nouvean driver (for newer systems, the nVidia installer handles this automatically)</li>
+</ul>
+
+<p>Here I will provide a walkthrough of this on an old system like Fedora 17.</p>
+
+<h2 id="toc_0">Download CUDA 8.0 and cuDNN 5.1</h2>
+
+<p>You can find CUDA Toolkit 8.0 installer for your system at <a href="https://developer.nvidia.com/cuda-downloads">official nvidia website</a>. For cuDNN 5.1, you can find it <a href="https://developer.nvidia.com/rdp/cudnn-download">HERE</a>. Note that in order to download cuDNN library, you need to create a nVidia developer account first(in case you don&#39;t have one). After the download is finished, use some FTP software like FileZilla to pull installers onto your Fedora 17 server.</p>
+
+<p>Then you need the following command to make the run file of CUDA executable:</p>
+
+<pre><code class="language-bash">chmod +x cuda_8.0.61_375.26_linux.run
+</code></pre>
+
+<h2 id="toc_1">Update build tools and kernel-devel of the system</h2>
+
+<p>NVIDIA’s installer will build a kernel module from the driver and link it to your kernel. Therefore it requires certain build tools being installed.</p>
+
+<pre><code class="language-bash">sudo yum groupinstall &quot;Development Tools&quot;
+sudo yum install kernel-devel kernel-headers
+</code></pre>
+
+<p>## Disable the x-window server by changing default run-level to &quot;3&quot;</p>
+
+<p>NVIDIA drivers only install if no X server is running. You can manually terminate the X server. However, some components, buffers and modules won’t unload. So, we need to boot directly into run-level “3” which is the text mode.<br/>
+Fedora’s default run-level is defined through a symbolic link which we will modify now and change back later.</p>
+
+<pre><code class="language-bash">sudo rm /etc/systemd/system/default.target
+sudo ln -sf /lib/systemd/system/multi-user.target /etc/systemd/system/default.target
+</code></pre>
+
+<h2 id="toc_2">Disable Nouveau driver manually (Needed for old systems like Fedora 17)</h2>
+
+<p>There are 3 steps for disabling the Nouvean driver. Note that you need to be the super user for all these operations. </p>
+
+<h3 id="toc_3">1. Blacklist Nouveau in /etc/modprobe.d</h3>
+
+<p>We need to prevent nouveau drivers from loading a) at boot time and b) post-boot. This step is to prevent it from being loaded manually or through any dependent module.<br/>
+We create a new config file disable-nouveau.conf as the existing file blacklist.conf might be updated/overwritten by any system update.</p>
+
+<pre><code class="language-bash">sudo echo &#39;blacklist nouveau&#39; &gt;&gt; /etc/modprobe.d/disable-nouveau.conf
+sudo echo &#39;nouveau modeset=0&#39; &gt;&gt; /etc/modprobe.d/disable-nouveau.conf
+</code></pre>
+
+<h3 id="toc_4">2. blacklist nouveau at boot time</h3>
+
+<p>Fedora ships nouveau as part of the boot image. That’s why blacklisting a la Step #4 is not sufficient. We need to pass a parameter to the kernel at boot time that stops nouveau from loading.</p>
+
+<p>In your file /boot/grub2/grub.cfg find the line that loads the kernel (yours might look slightly different but should start similarly):</p>
+
+<pre><code class="language-bash">linux   /vmlinuz-3.6.3-1.fc17.x86_64 root=/dev/mapper/vg_fedo-lv_root ro rd.lvm.lv=vg_fedo/lv_swap rd.md=0 rd.dm=0 SYSFONT=True rd.lvm.lv=vg_fedo/lv_root rd.luks=0  KEYTABLE=es LANG=en_US.UTF-8 rhgb quiet
+</code></pre>
+
+<p>And now add the parameter rdblacklist=nouveau to it:</p>
+
+<pre><code class="language-bash">linux   /vmlinuz-3.6.3-1.fc17.x86_64 root=/dev/mapper/vg_fedo-lv_root ro rd.lvm.lv=vg_fedo/lv_swap rd.md=0 rd.dm=0 SYSFONT=True rd.lvm.lv=vg_fedo/lv_root rd.luks=0  KEYTABLE=es LANG=en_US.UTF-8 rdblacklist=nouveau rhgb quiet
+</code></pre>
+
+<h3 id="toc_5">3. Remove / disable nouveau drivers from kernel initramfs</h3>
+
+<p>For some OS version like Fedora 17, this step is also required to succefully disable Nouvean driver from being loaded.</p>
+
+<pre><code class="language-bash">## Backup old initramfs nouveau image ##
+mv /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r)-nouveau.img
+
+## Create new initramfs image ##
+dracut /boot/initramfs-$(uname -r).img $(uname -r)
+</code></pre>
+
+<p>Once this three steps are done, reboot the system. Now you are ready to install CUDA driver.</p>
+
+<h2 id="toc_6">Install CUDA 8.0 and CUDA Toolkit</h2>
+
+<p>Now run the .run file you downloaded as the super user to start installing CUDA driver.</p>
+
+<pre><code class="language-bash">sudo cuda_8.0.61_375.26_linux.run
+</code></pre>
+
+<p>Follow the instructions and you should be able to install the driver now.<br/>
+Once the installation is completed, run the following command to add environmental variables for CUDA and CUDA Toolkit:</p>
+
+<pre><code class="language-bash">echo -e &quot;\n## CUDA and cuDNN paths&quot;  &gt;&gt; ~/.bashrc
+echo &#39;export PATH=/usr/local/cuda-8.0/bin:${PATH}&#39; &gt;&gt; ~/.bashrc
+echo &#39;export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64:${LD_LIBRARY_PATH}&#39; &gt;&gt; ~/.bashrc
+source ~/.bashrc
+</code></pre>
+
+<p>You can check the installation using the following command.</p>
+
+<pre><code class="language-bash">which nvcc
+# If installation is successful, you should see something like this:
+# /usr/local/cuda-8.0/bin/nvcc
+
+nvidia-smi
+# If installation is successful, you should see something like this:
+# +-----------------------------------------------------------------------------+
+#| NVIDIA-SMI 375.26                 Driver Version: 375.26                    |
+#|-------------------------------+----------------------+----------------------+
+#| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+#| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+#|===============================+======================+======================|
+#|   0  Tesla K20c          Off  | 0000:03:00.0     Off |                    0 |
+#| 30%   32C    P0    54W / 225W |      0MiB /  4742MiB |    100%      Default |
+#+-------------------------------+----------------------+----------------------+
+
+#+-----------------------------------------------------------------------------+
+#| Processes:                                                       GPU Memory |
+#|  GPU       PID  Type  Process name                               Usage      |
+#|=============================================================================|
+#|  No running processes found                                                 |
+#+-----------------------------------------------------------------------------+
+</code></pre>
+
+<h2 id="toc_7">Install cuDNN library</h2>
+
+<p>For most deep learning frameworks like Tensorflow, you also need cuDNN library to run it on GPU. Now let&#39;s install it as well.</p>
+
+<p>The installation of cuDNN is relatively simple, just use the following command at where the cudnn tgz file is located:</p>
+
+<pre><code class="language-bash">tar -xzvf cudnn-8.0-linux-x64-v5.1.tgz 
+sudo cp -a cuda/lib64/* /usr/local/cuda-8.0/lib64/
+sudo cp -a cuda/include/* /usr/local/cuda-8.0/include/
+sudo ldconfig
+</code></pre>
+
+<p>Then you can delete the cuda folder and tgz file:</p>
+
+<pre><code class="language-bash">rm -rf cuda
+rm cudnn-8.0-linux-x64-v5.1.tgz 
+</code></pre>
+
+<h2 id="toc_8">Change default run-level back to &quot;5&quot; to use graphical user interface again</h2>
+
+<p>We have diabled the x-window server to install nVidia driver before. Now the installation is finished, we can enable it again.</p>
+
+<pre><code class="language-bash">sudo rm /etc/systemd/system/default.target
+sudo ln -sf /lib/systemd/system/graphical.target /etc/systemd/system/default.target
+</code></pre>
+
+<p>Reboot your system again to make it effective.</p>
+
+<p>Now the installation of CUDA and cuDNN is finished, you can use your GPU in deep learning packages now.</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Setting up a blog on Github Pages that can be updated using only your iPad/iPhone]]></title>
+    <link href="https://superkerokero.github.io/15152368299031.html"/>
+    <updated>2018-01-06T20:07:09+09:00</updated>
+    <id>https://superkerokero.github.io/15152368299031.html</id>
+    <content type="html"><![CDATA[
+<p>There are plenty of options for people who wants a personal blog/website.</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Paid Server</th>
+<th>Owned Server</th>
+<th>Blog Services</th>
+<th>Jekyll/Hexo</th>
+<th>This method</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Cost</td>
+<td><font color="Red">High</font></td>
+<td><font color="Red">High</font></td>
+<td><font color="Lime">Low/None</font></td>
+<td><font color="SeaGreen">None</font></td>
+<td><font color="SeaGreen">None</font></td>
+</tr>
+<tr>
+<td>Effort</td>
+<td><font color="Orange">Medium</font></td>
+<td><font color="Red">High</font></td>
+<td><font color="SeaGreen">None</font></td>
+<td><font color="Green">Minimal</font></td>
+<td><font color="Green">Minimal</font></td>
+</tr>
+<tr>
+<td>Freedom</td>
+<td><font color="SeaGreen">High</font></td>
+<td><font color="DarkOliveGreen">Unlimited</font></td>
+<td><font color="Red">Low</font></td>
+<td><font color="Lime">Medium</font></td>
+<td><font color="Lime">Medium</font></td>
+</tr>
+<tr>
+<td>Mobile</td>
+<td><font color="SeaGreen">Possible</font></td>
+<td><font color="SeaGreen">Possible</font></td>
+<td><font color="SeaGreen">Possible</font></td>
+<td><font color="Red">None</font></td>
+<td><font color="SeaGreen">Possible</font></td>
+</tr>
+</tbody>
+</table>
+
+<span id="more"></span><!-- more -->
+
+<p>If you don&#39;t care about the cost, you can always buy a host service that offers famous blog frameworks like Wordpress. There are many iOS apps that supports real time updating this framework(including an official app). Or if you have a web server of your own, well, you could do whatever you want. But the setting up process and the mundane maintenance work is certainly not for every one. Most people would probably choose to use a third-party blog site, like Blogger or Medium. Free, fast and convenient. You can start writing right away, but you don&#39;t have much options. GitHub pages combined with a static site generator like Jekyll or Hexo seems to be the perfect choice for geeks who prefer more freedom... With one drawback: these blogs can&#39;t be updated when your laptop is not at hand. <br/>
+ Won&#39;t it be nice to have all the benefits of Github pages + static site generator combined with mobile accessibility? Well, you&#39;ve come to the right place. This blog was built using exactly the method described below.</p>
+
+<h2 id="toc_0">Prerequisites</h2>
+
+<ul>
+<li>[ x ] Github pages account and repository</li>
+<li>[ x ] Some basics of HTML and git</li>
+<li>[ x ] Mobile markdown editor app that supports exporting HTML file such as Mweb</li>
+<li>[ x ] Working Copy app or any other kind of git client</li>
+</ul>
+
+<h2 id="toc_1">Step.1 Github pages account and repository</h2>
+
+<p>In order to host a website using Github pages, you simply have to create a github repository called &quot;[user name].github.io&quot;, and upload your site to it.<br/>
+Github pages offers a nicely written tutorial telling you how to do this. Check the <a href="https://pages.github.com">official website</a></p>
+
+<h2 id="toc_2">Step.2 Download the blog template</h2>
+
+<p>After creating the repository, you can move on to create your blog using a well crafted blog template like <a href="https://startbootstrap.com/template-overviews/clean-blog">Clean Blog by Start Bootstrap</a>.<br/>
+ Download the latest version and extract the files into a local folder.<br/>
+ You should see files like the following.<br/>
+<img src="http://i.imgur.com/7dyfUmZ.png" alt="files"/><br/>
+ Open the index.html file, you can see the prototype of the blog.<br/>
+ <img src="http://i.imgur.com/dj4nVd5.png" alt="blogprevie"/></p>
+
+<h2 id="toc_3">Step.3 Modify the template</h2>
+
+<p>Here is a list of what you have to change in the template file in order to make it your own site.</p>
+
+<ul>
+<li>Page title, SNS links and copyrights</li>
+<li>Background pictures and headings</li>
+<li>Contact page form</li>
+<li>Set up the embedding page for new blog updates</li>
+</ul>
+
+<h3 id="toc_4">Page title, SNS links and copyrights.</h3>
+
+<p>The template contains 4 major pages: <br/>
+* index.html -- The home page<br/>
+* contact.html -- Contact page used to send messages to you<br/>
+* about.html -- About page that contains your personal statement<br/>
+* post.html -- A sample post. </p>
+
+<p>Open the index.html file, <br/>
+ You can see its content starts like this:</p>
+
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+    &lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=edge&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+    &lt;meta name=&quot;description&quot; content=&quot;&quot;&gt;
+    &lt;meta name=&quot;author&quot; content=&quot;&quot;&gt;
+
+    &lt;title&gt;Clean Blog&lt;/title&gt;
+
+    &lt;!-- Bootstrap Core CSS --&gt;
+    &lt;link href=&quot;vendor/bootstrap/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot;&gt;
+
+    &lt;!-- Theme CSS --&gt;
+    &lt;link href=&quot;css/clean-blog.min.css&quot; rel=&quot;stylesheet&quot;&gt;
+
+    &lt;!-- Custom Fonts --&gt;
+    &lt;link href=&quot;vendor/font-awesome/css/font-awesome.min.css&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot;&gt;
+    &lt;link href=&#39;https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic&#39; rel=&#39;stylesheet&#39; type=&#39;text/css&#39;&gt;
+    &lt;link href=&#39;https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800&#39; rel=&#39;stylesheet&#39; type=&#39;text/css&#39;&gt;
+    
+&lt;/head&gt;
+</code></pre>
+
+<p>The <code>&lt;title&gt;Clean Blog&lt;/title&gt;</code> inside <code>&lt;head&gt; ... &lt;/head&gt;</code>stores the information of the page&#39;s title. You can change &quot;Clean Blog&quot; here to your own title.</p>
+
+<p>Then in the next part of the html file, you can find <code>&lt;nav&gt; ... &lt;/nav&gt;</code> inside <code>&lt;body&gt; ... &lt;/body&gt;</code>. The <code>&lt;div class=&quot;collapse navbar-collapse&quot; id=&quot;bs-example-navbar-collapse-1&quot;&gt; ... &lt;/div&gt;</code> contains a list of 4 items, which are the items of navigation bar at the top of the page. You can delete the &quot;sample post&quot; part if you don&#39;t need it. Then it won&#39;t appear anymore.</p>
+
+<p>Then go to the footer part of the file <code>&lt;footer&gt; ... &lt;/footer&gt;</code>, you can find elements that stores the information SNS icons at the bottom of the page. Elements of SNS icons are stored like this:</p>
+
+<pre><code class="language-html">&lt;li&gt;
+    &lt;a href=&quot;#&quot;&gt;
+        &lt;span class=&quot;fa-stack fa-lg&quot;&gt;
+            &lt;i class=&quot;fa fa-circle fa-stack-2x&quot;&gt;&lt;/i&gt;
+            &lt;i class=&quot;fa fa-twitter fa-stack-1x fa-inverse&quot;&gt;&lt;/i&gt;
+        &lt;/span&gt;
+    &lt;/a&gt;
+&lt;/li&gt;
+</code></pre>
+
+<p>Here the template uses <a href="http://fontawesome.io/">Font Awesome&#39;s</a> fantastic icons.<br/>
+Here the # inside <code>&lt;a href=&quot;#&quot;&gt;</code> should be replaced by your corresponding SNS link. the <code>&lt;i class&gt; ... &lt;/i&gt;</code> part here defines the icon shape and type. For details, please refer to their official site.</p>
+
+<p>Next step is to modify the copyrights info. The corresponding string can be found in <code>&lt;p class=&quot;copyright text-muted&quot;&gt;Copyright &amp;copy; [some string] &lt;/p&gt;</code> next to the SNS icon contents. Change the string inside to your info.</p>
+
+<p>Now you&#39;ve changed the page title, SNS links and copyrights in index.html, open it in your browser to confirm the changes you&#39;ve made. If satisfied, change other pages as well following the same step.</p>
+
+<h3 id="toc_5">Background pictures and headings</h3>
+
+<p>Now you want to replace all background pictures with your own. First you have to copy the pictures you want to use in to the &quot;img&quot; folder in the project folder. Then find the <code>&lt;header ... &gt; ... &lt;/header&gt;</code> part in the index.html file like the following:</p>
+
+<pre><code class="language-html">    &lt;!-- Page Header --&gt;
+    &lt;!-- Set your background image for this header on the line below. --&gt;
+    &lt;header class=&quot;intro-header&quot; style=&quot;background-image: url(&#39;img/home-bg.jpg&#39;)&quot;&gt;
+        &lt;div class=&quot;container&quot;&gt;
+            &lt;div class=&quot;row&quot;&gt;
+                &lt;div class=&quot;col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1&quot;&gt;
+                    &lt;div class=&quot;site-heading&quot;&gt;
+                        &lt;h1&gt;Clean Blog&lt;/h1&gt;
+                        &lt;hr class=&quot;small&quot;&gt;
+                        &lt;span class=&quot;subheading&quot;&gt;A Clean Blog Theme by Start Bootstrap&lt;/span&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/header&gt;
+</code></pre>
+
+<p>Inside the line <code>&lt;header class=&quot;intro-header&quot; style=&quot;background-image: url(&#39;img/home-bg.jpg&#39;)&quot;&gt;</code> , the string in url(&#39; ... &#39;) contains the link to the background image of this page. Change it to the address of the picture you want to use like &quot;img/[your pic name]&quot;. Save the file, refresh your browser and check if the background picture has changed.</p>
+
+<p>Then inside <code>&lt;div class=&#39;site-heading&#39;&gt; ... &lt;/div&gt;</code> , you can find strings of your the heading of the page. Change them to your own content.</p>
+
+<p>You can follow the same steps to modify other html pages.</p>
+
+<h3 id="toc_6">Contact page form</h3>
+
+<p>The original contact page form uses php post-processors to realize the mailing function. But it is not possible to use php scripts in a static website hosted by Github pages. One solution is to replace this form with a Google Form and embed it in your contact page.</p>
+
+<p>To do this, first you need to create your own form using <a href="https://docs.google.com/forms/">Google Form</a>. Making the form using Google&#39;s service is very easy and intuitive. I will skip it here. For email notifications, their are several add-ons you can use from the form&#39;s setting menu.</p>
+
+<p>After your form is done, find its embed code from the &quot;send&quot; button in the form of <code>&lt;iframe src=&quot;https://docs.google.com/forms/d/e/[some hash]/viewform?embedded=true&quot; width=&quot;760&quot; height=&quot;500&quot; frameborder=&quot;0&quot; marginheight=&quot;0&quot; marginwidth=&quot;0&quot;&gt;...&lt;/iframe&gt;</code> , copy it to your clipboard.</p>
+
+<p>Now open contact.html, find the content starting with <code>&lt;!-- Main Content --&gt;</code></p>
+
+<pre><code class="language-html">&lt;!-- Main Content --&gt;
+    &lt;div class=&quot;container&quot;&gt;
+        &lt;div class=&quot;row&quot;&gt;
+            &lt;div class=&quot;col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1&quot;&gt;
+                &lt;p&gt;Want to get in touch with me? Fill out the form below to send me a message and I will try to get back to you within 24 hours!&lt;/p&gt;
+                &lt;form name=&quot;sentMessage&quot; id=&quot;contactForm&quot; novalidate&gt;
+                    [...]    
+                &lt;/form&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+</code></pre>
+
+<p>Replace all contents of <code>&lt;form ... &gt;&lt;/form&gt;</code> , including <code>&lt;form ... &gt;&lt;/form&gt;</code> itself, with the embed code you just got from Google Form, like:</p>
+
+<pre><code class="language-html">&lt;!-- Main Content --&gt;
+    &lt;div class=&quot;container&quot;&gt;
+        &lt;div class=&quot;row&quot;&gt;
+            &lt;div class=&quot;col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1&quot;&gt;
+                &lt;p&gt;Want to get in touch with me? Fill out the form below to send me a message and I will try to get back to you within 24 hours!&lt;/p&gt;
+                &lt;iframe src=&quot;https://docs.google.com/forms/d/e/[some hash]/viewform?embedded=true&quot; width=&quot;760&quot; height=&quot;500&quot; frameborder=&quot;0&quot; marginheight=&quot;0&quot; marginwidth=&quot;0&quot;&gt;...&lt;/iframe&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+</code></pre>
+
+<p>Note that you can adjust the height of iframe in <code>height=&quot;500&quot;</code> to appropriate value to remove the scroll bar.</p>
+
+<p>Now the new contact form is ready, you can delete the &quot;mail&quot; folder and &quot;contact_me.js&quot;, &quot;jqBootstrapValidation.js&quot; in &quot;js&quot; folder, since they are no longer needed.</p>
+
+<h3 id="toc_7">Set up the embedding page for new blog updates</h3>
+
+<p>The last step is to set up the update system for your blog. We will first modify the post.html to make it a container for all future blog posts. We can embed all future blog posts generated (exported in html format) by markdown editor apps into this container page using <code>&lt;iframe ... &gt;&lt;/iframe&gt;</code> tag to maintain the unified style of the blog.</p>
+
+<p>In order to make the embedded iframe self-responsive to all length(so that you don&#39;t see an ugly second scroll bar on your post page), we have to add a small onload function call to the <code>&lt;iframe ... &gt;&lt;/iframe&gt;</code> tag. You can do it like this: inside the <code>&lt;body&gt; .. &lt;/body&gt;</code> section, replace the <code>&lt;div class=&quot;col-lg-8 offset-lg-2 col-md-10 offset-md-1&quot;&gt;[...]&lt;/div&gt;</code> part with the following:</p>
+
+<p>section like this:</p>
+
+<pre><code class="language-html">&lt;div class=&quot;col-lg-8 offset-lg-2 col-md-10 offset-md-1&quot;&gt;
+&lt;iframe id=&quot;myIframe&quot; src=&quot;&quot; scrolling=&quot;no&quot; frameborder=&quot;0&quot; onload=&quot;this.style.height=this.contentDocument.body.scrollHeight +&#39;px&#39;;&quot;&gt;&lt;/iframe&gt;
+&lt;/div&gt;
+</code></pre>
+
+<p>The above method only works for html files inside the same domain. For blog purposes, this is fine. But if you want to embed some of your older blog posts(html) from other domains, you need a small Javascript library called iframe-resizer. If you don&#39;t need the cross domain reference, you can skip the following grey section inside double bars.</p>
+
+<hr/>
+
+<hr/>
+
+<p><span style="color:grey"><br/>
+This library called iframe-resizer enables cross domain reference for javascript in iframes. You can download it from its <a href="https://github.com/davidjbradshaw/iframe-resizer">Github repository</a>. You only need two files from it. The &quot;iframeResizer.min.js&quot; and &quot;iframeResizer.contentWindow.min.js&quot; inside the &quot;js&quot; folder. Copy these 2 files into your project&#39;s &quot;js&quot; folder, and you can move on to edit the post.html page.<br/>
+</span><br/>
+<span style="color:grey"><br/>
+Inside the <code>&lt;head&gt; ... &lt;/head&gt;</code> section of post.html, insert the following to reference the iframe resizer library:<br/>
+</span></p>
+
+<pre><code class="language-html">    &lt;!-- Script for resizing iframe --&gt;
+    &lt;script src=&quot;js/iframeResizer.min.js&quot;&gt;&lt;/script&gt;
+</code></pre>
+
+<p><span style="color:grey"><br/>
+Then inside the <code>&lt;body&gt; .. &lt;/body&gt;</code> section, replace the <code>&lt;div class=&quot;col-lg-8 offset-lg-2 col-md-10 offset-md-1&quot;&gt;[...]&lt;/div&gt;</code> part with the following:<br/>
+</span></p>
+
+<pre><code class="language-html">&lt;div class=&quot;col-lg-8 offset-lg-2 col-md-10 offset-md-1&quot;&gt;
+    &lt;iframe id=&quot;myIframe&quot; src=&quot;&quot; scrolling=&quot;no&quot; frameborder=&quot;0&quot;&gt;&lt;/iframe&gt;
+    &lt;script&gt;
+        iFrameResize({
+            log: false
+        }, &#39;#myIframe&#39;);
+    &lt;/script&gt;
+&lt;/div&gt;
+</code></pre>
+
+<p><span style="color:grey"><br/>
+You need to add the following code to the <code>&lt;head&gt; ... &lt;/head&gt;</code> section of all your blog posts html files in order for the iframe resizer to work properly:<br/>
+</span></p>
+
+<pre><code class="language-html">    &lt;!-- Script for resizing iframe --&gt;
+    &lt;script src=&quot;../js/iframeResizer.contentWindow.min.js&quot;&gt;&lt;/script&gt;
+</code></pre>
+
+<hr/>
+
+<hr/>
+
+<p>Next, add the following code at the end of <code>&lt;body&gt; ... &lt;/body&gt;</code>:</p>
+
+<pre><code class="language-js">    &lt;script&gt;
+        var postItem = localStorage.getItem(&quot;postSrc&quot;);
+        $(&quot;#myIframe&quot;).attr(&quot;src&quot;, postItem);
+        $(&quot;#myIframe&quot;).attr(&quot;width&quot;, $(window).width());
+    &lt;/script&gt;
+</code></pre>
+
+<p>Now the container for your future posts is ready. Create a new folder called &quot;posts&quot; in your project folder, and copy all of your blog posts(html format) generated by markdown editor apps inside.</p>
+
+<p>Now open index.html in your editor, we need to update all blog posts links here. All blog posts previews are stored inside <code>&lt;div class=&quot;col-lg-8 offset-lg-2 col-md-10 offset-md-1&quot;&gt; ... &lt;/div&gt;</code>. They are in the format of:</p>
+
+<pre><code class="language-html">&lt;div class=&quot;post-preview&quot; id=&quot;post1&quot;&gt;
+                    &lt;a href=&quot;post.html&quot;&gt;
+                        &lt;h2 class=&quot;post-title&quot;&gt;
+                            Man must explore, and this is exploration at its greatest
+                        &lt;/h2&gt;
+                        &lt;h3 class=&quot;post-subtitle&quot;&gt;
+                            Problems look mighty small from 150 miles up
+                        &lt;/h3&gt;
+                    &lt;/a&gt;
+                    &lt;p class=&quot;post-meta&quot;&gt;Posted by &lt;a href=&quot;#&quot;&gt;Start Bootstrap&lt;/a&gt; on September 24, 2017&lt;/p&gt;
+                &lt;/div&gt;
+                &lt;hr&gt;
+</code></pre>
+
+<p>The contents in &quot;post-title&quot;, &quot;post-subtitle&quot; and &quot;post-meta&quot; are exactly what their names suggest them to be. Change them to fit your post. If you need more posts, simply copy paste more <code>&lt;div class=&quot;post-preview&quot; id=&quot;post[num]&quot;&gt; ... &lt;/dir&gt;&lt;hr&gt;</code> sections here. Make sure that you change the [num] of each new post you add.</p>
+
+<p>Then at the end of <code>&lt;body&gt; ... &lt;/body&gt;</code>, add the following code:</p>
+
+<pre><code class="language-js">    &lt;script&gt;
+        $(&quot;#post1&quot;).click(function() {
+            localStorage.setItem(&quot;postSrc&quot;, &quot;posts/[blog1 filename]&quot;);
+        });
+        $(&quot;#post2&quot;).click(function() {
+            localStorage.setItem(&quot;postSrc&quot;, &quot;posts/[blog2 filename]&quot;);
+        });
+        .
+        .
+        .
+    &lt;/script&gt;
+</code></pre>
+
+<p>This allows the page to find the corresponding blog post of yours. Every time you add a new blog post, you need to update this section as well.</p>
+
+<p>Now your blog site is ready. You can finally push your project to your Github pages repository, and make sure you can view it via your Github pages url address.</p>
+
+<h2 id="toc_8">Update your blog on the go</h2>
+
+<p>Now your Github pages blog is ready, whenever you want to update it with new blog posts, you only need to the following:</p>
+
+<ul>
+<li>Write it using markdown editor app like Mweb and export it into html file.</li>
+<li>Open the html and copy it into your Github pages repository&#39;s &quot;posts&quot; folder using Working Copy(or any other git client).</li>
+<li><span style="color:grey"> ( You can skip this if you are not using iframe-resizer library. ) Edit the exported post html to add the following code to the <code>&lt;head&gt; ... &lt;/head&gt;</code> section: </span></li>
+</ul>
+
+<pre><code class="language-html">    &lt;!-- Script for resizing iframe --&gt;
+    &lt;script src=&quot;../js/iframeResizer.contentWindow.min.js&quot;&gt;&lt;/script&gt;
+</code></pre>
+
+<ul>
+<li>Edit the index.html to add corresponding blog post preview for your new post following <a href="#Set%20up%20the%20embedding%20page%20for%20new%20blog%20updates">Set up the embedding page for new blog updates</a>.</li>
+<li>Push the changes to your Github pages repository.</li>
+</ul>
+
+<p>All of these can be done on a single iOS device connected to the internet.</p>
+
+<h2 id="toc_9">Automating the update process using Pythonista</h2>
+
+<p>If you have Pythonista app installed on your iOS device, its possible to automate the update process by writing a simple script. I might offer an example script later on this blog.</p>
+
+]]></content>
+  </entry>
+  
+</feed>

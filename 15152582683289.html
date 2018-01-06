@@ -1,0 +1,493 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+    
+  How to disable Nouvean driver and Install CUDA 8.0 & cuDNN 5.1 on Fedora 17 - Computational Nonsense
+  
+  </title>
+  
+  
+  <link href="atom.xml" rel="alternate" title="Computational Nonsense" type="application/atom+xml">
+    <link rel="stylesheet" href="asset/css/foundation.min.css" />
+    <link rel="stylesheet" href="asset/css/docs.css" />
+    <link href="asset/css/clean-blog.min.css" rel="stylesheet">
+    <script src="asset/js/vendor/modernizr.js"></script>
+    <script src="asset/js/vendor/jquery.js"></script>
+  <script src="asset/highlightjs/highlight.pack.js"></script>
+  <link href="asset/highlightjs/styles/github.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script>hljs.initHighlightingOnLoad();</script>
+<script type="text/javascript">
+  function before_search(){
+    var searchVal = 'site:superkerokero.github.io ' + document.getElementById('search_input').value;
+    document.getElementById('search_q').value = searchVal;
+    return true;
+  }
+</script>
+  </head>
+  <body class="antialiased hide-extras">
+    
+    <div class="marketing off-canvas-wrap" data-offcanvas>
+      <div class="inner-wrap">
+
+
+<nav class="top-bar docs-bar hide-for-small" data-topbar>
+
+
+  <section class="top-bar-section">
+  <div class="row">
+      <div style="position: relative;width:100%;"><div style="position: absolute; width:100%;">
+        <ul id="main-menu" class="left">
+        
+        <li id=""><a target="_self" href="index.html">Home</a></li>
+        
+        <li id=""><a target="_self" href="archives.html">Archives</a></li>
+        
+        </ul>
+
+        <ul class="right" id="search-wrap">
+          <li>
+<form target="_blank" onsubmit="return before_search();" action="http://google.com/search" method="get">
+    <input type="hidden" id="search_q" name="q" value="" />
+    <input tabindex="1" type="search" id="search_input"  placeholder="Search"/>
+</form>
+</li>
+          </ul>
+      </div></div>
+  </div>
+  </section>
+
+</nav>
+
+        <nav class="tab-bar show-for-small">
+  <a href="javascript:void(0)" class="left-off-canvas-toggle menu-icon">
+    <span> &nbsp; Computational Nonsense</span>
+  </a>
+</nav>
+
+<header class="masthead" id='masthead'></header>
+
+<aside class="left-off-canvas-menu">
+      <ul class="off-canvas-list">
+       
+       <li><a href="index.html">HOME</a></li>
+    <li><a href="archives.html">Archives</a></li>
+    <li><a href="about.html">ABOUT</a></li>
+
+    <li><label>Categories</label></li>
+
+        
+            <li><a href="hackers.html">Hacker's</a></li>
+        
+            <li><a href="misc.html">MISC</a></li>
+         
+
+      </ul>
+    </aside>
+
+<a class="exit-off-canvas" href="#"></a>
+
+
+        <section id="main-content" role="main" class="scroll-container">
+ <script type="text/javascript">
+  $(function(){
+    $('#menu_item_index').addClass('is_active');
+  });
+</script>
+<div class="row">
+  <div class="large-8 medium-8 columns">
+      <div class="markdown-body article-wrap">
+       <div class="article">
+          
+          <h1>How to disable Nouvean driver and Install CUDA 8.0 & cuDNN 5.1 on Fedora 17</h1>
+     
+        <div class="read-more clearfix">
+          <span class="date">2018/1/7 2:4 AM</span>
+
+          <span>posted in&nbsp;</span> 
+          
+              <span class="posted-in"><a href='hackers.html'>Hacker's</a></span>
+           
+         
+          <span class="comments">
+            
+              <a href="https://superkerokero.github.io/15152582683289.html#disqus_thread">comments</a>
+            
+
+            
+          </span>
+
+        </div>
+      </div><!-- article -->
+
+      <div class="article-content">
+      <p>In order to take advantage of extra computational power from nVidia GPUs like Tesla, we need to install proper CUDA drivers on the system. The best choice is to use docker with nvidia-docker enabled GPU containers. The problem is, you can&#39;t install docker on older Linux systems like Fedora 17 ... In order to install docker, you need at least a Fedora version of 24. Sadly, sometimes upgrading the Linux OS for the server is not a viable option. </p>
+
+<span id="more"></span><!-- more -->
+
+<p>OK, we have to install the CUDA Toolkit and cuDNN libraries by ourselves now. This is still not quite easy for Linux systems, espesially the old ones. You have to solve following 2 problems to do this. </p>
+
+<ul>
+<li>Disable the x-window of the system</li>
+<li>Disable Nouvean driver (for newer systems, the nVidia installer handles this automatically)</li>
+</ul>
+
+<p>Here I will provide a walkthrough of this on an old system like Fedora 17.</p>
+
+<h2 id="toc_0">Download CUDA 8.0 and cuDNN 5.1</h2>
+
+<p>You can find CUDA Toolkit 8.0 installer for your system at <a href="https://developer.nvidia.com/cuda-downloads">official nvidia website</a>. For cuDNN 5.1, you can find it <a href="https://developer.nvidia.com/rdp/cudnn-download">HERE</a>. Note that in order to download cuDNN library, you need to create a nVidia developer account first(in case you don&#39;t have one). After the download is finished, use some FTP software like FileZilla to pull installers onto your Fedora 17 server.</p>
+
+<p>Then you need the following command to make the run file of CUDA executable:</p>
+
+<pre><code class="language-bash">chmod +x cuda_8.0.61_375.26_linux.run
+</code></pre>
+
+<h2 id="toc_1">Update build tools and kernel-devel of the system</h2>
+
+<p>NVIDIA’s installer will build a kernel module from the driver and link it to your kernel. Therefore it requires certain build tools being installed.</p>
+
+<pre><code class="language-bash">sudo yum groupinstall &quot;Development Tools&quot;
+sudo yum install kernel-devel kernel-headers
+</code></pre>
+
+<p>## Disable the x-window server by changing default run-level to &quot;3&quot;</p>
+
+<p>NVIDIA drivers only install if no X server is running. You can manually terminate the X server. However, some components, buffers and modules won’t unload. So, we need to boot directly into run-level “3” which is the text mode.<br/>
+Fedora’s default run-level is defined through a symbolic link which we will modify now and change back later.</p>
+
+<pre><code class="language-bash">sudo rm /etc/systemd/system/default.target
+sudo ln -sf /lib/systemd/system/multi-user.target /etc/systemd/system/default.target
+</code></pre>
+
+<h2 id="toc_2">Disable Nouveau driver manually (Needed for old systems like Fedora 17)</h2>
+
+<p>There are 3 steps for disabling the Nouvean driver. Note that you need to be the super user for all these operations. </p>
+
+<h3 id="toc_3">1. Blacklist Nouveau in /etc/modprobe.d</h3>
+
+<p>We need to prevent nouveau drivers from loading a) at boot time and b) post-boot. This step is to prevent it from being loaded manually or through any dependent module.<br/>
+We create a new config file disable-nouveau.conf as the existing file blacklist.conf might be updated/overwritten by any system update.</p>
+
+<pre><code class="language-bash">sudo echo &#39;blacklist nouveau&#39; &gt;&gt; /etc/modprobe.d/disable-nouveau.conf
+sudo echo &#39;nouveau modeset=0&#39; &gt;&gt; /etc/modprobe.d/disable-nouveau.conf
+</code></pre>
+
+<h3 id="toc_4">2. blacklist nouveau at boot time</h3>
+
+<p>Fedora ships nouveau as part of the boot image. That’s why blacklisting a la Step #4 is not sufficient. We need to pass a parameter to the kernel at boot time that stops nouveau from loading.</p>
+
+<p>In your file /boot/grub2/grub.cfg find the line that loads the kernel (yours might look slightly different but should start similarly):</p>
+
+<pre><code class="language-bash">linux   /vmlinuz-3.6.3-1.fc17.x86_64 root=/dev/mapper/vg_fedo-lv_root ro rd.lvm.lv=vg_fedo/lv_swap rd.md=0 rd.dm=0 SYSFONT=True rd.lvm.lv=vg_fedo/lv_root rd.luks=0  KEYTABLE=es LANG=en_US.UTF-8 rhgb quiet
+</code></pre>
+
+<p>And now add the parameter rdblacklist=nouveau to it:</p>
+
+<pre><code class="language-bash">linux   /vmlinuz-3.6.3-1.fc17.x86_64 root=/dev/mapper/vg_fedo-lv_root ro rd.lvm.lv=vg_fedo/lv_swap rd.md=0 rd.dm=0 SYSFONT=True rd.lvm.lv=vg_fedo/lv_root rd.luks=0  KEYTABLE=es LANG=en_US.UTF-8 rdblacklist=nouveau rhgb quiet
+</code></pre>
+
+<h3 id="toc_5">3. Remove / disable nouveau drivers from kernel initramfs</h3>
+
+<p>For some OS version like Fedora 17, this step is also required to succefully disable Nouvean driver from being loaded.</p>
+
+<pre><code class="language-bash">## Backup old initramfs nouveau image ##
+mv /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r)-nouveau.img
+
+## Create new initramfs image ##
+dracut /boot/initramfs-$(uname -r).img $(uname -r)
+</code></pre>
+
+<p>Once this three steps are done, reboot the system. Now you are ready to install CUDA driver.</p>
+
+<h2 id="toc_6">Install CUDA 8.0 and CUDA Toolkit</h2>
+
+<p>Now run the .run file you downloaded as the super user to start installing CUDA driver.</p>
+
+<pre><code class="language-bash">sudo cuda_8.0.61_375.26_linux.run
+</code></pre>
+
+<p>Follow the instructions and you should be able to install the driver now.<br/>
+Once the installation is completed, run the following command to add environmental variables for CUDA and CUDA Toolkit:</p>
+
+<pre><code class="language-bash">echo -e &quot;\n## CUDA and cuDNN paths&quot;  &gt;&gt; ~/.bashrc
+echo &#39;export PATH=/usr/local/cuda-8.0/bin:${PATH}&#39; &gt;&gt; ~/.bashrc
+echo &#39;export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64:${LD_LIBRARY_PATH}&#39; &gt;&gt; ~/.bashrc
+source ~/.bashrc
+</code></pre>
+
+<p>You can check the installation using the following command.</p>
+
+<pre><code class="language-bash">which nvcc
+# If installation is successful, you should see something like this:
+# /usr/local/cuda-8.0/bin/nvcc
+
+nvidia-smi
+# If installation is successful, you should see something like this:
+# +-----------------------------------------------------------------------------+
+#| NVIDIA-SMI 375.26                 Driver Version: 375.26                    |
+#|-------------------------------+----------------------+----------------------+
+#| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+#| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+#|===============================+======================+======================|
+#|   0  Tesla K20c          Off  | 0000:03:00.0     Off |                    0 |
+#| 30%   32C    P0    54W / 225W |      0MiB /  4742MiB |    100%      Default |
+#+-------------------------------+----------------------+----------------------+
+
+#+-----------------------------------------------------------------------------+
+#| Processes:                                                       GPU Memory |
+#|  GPU       PID  Type  Process name                               Usage      |
+#|=============================================================================|
+#|  No running processes found                                                 |
+#+-----------------------------------------------------------------------------+
+</code></pre>
+
+<h2 id="toc_7">Install cuDNN library</h2>
+
+<p>For most deep learning frameworks like Tensorflow, you also need cuDNN library to run it on GPU. Now let&#39;s install it as well.</p>
+
+<p>The installation of cuDNN is relatively simple, just use the following command at where the cudnn tgz file is located:</p>
+
+<pre><code class="language-bash">tar -xzvf cudnn-8.0-linux-x64-v5.1.tgz 
+sudo cp -a cuda/lib64/* /usr/local/cuda-8.0/lib64/
+sudo cp -a cuda/include/* /usr/local/cuda-8.0/include/
+sudo ldconfig
+</code></pre>
+
+<p>Then you can delete the cuda folder and tgz file:</p>
+
+<pre><code class="language-bash">rm -rf cuda
+rm cudnn-8.0-linux-x64-v5.1.tgz 
+</code></pre>
+
+<h2 id="toc_8">Change default run-level back to &quot;5&quot; to use graphical user interface again</h2>
+
+<p>We have diabled the x-window server to install nVidia driver before. Now the installation is finished, we can enable it again.</p>
+
+<pre><code class="language-bash">sudo rm /etc/systemd/system/default.target
+sudo ln -sf /lib/systemd/system/graphical.target /etc/systemd/system/default.target
+</code></pre>
+
+<p>Reboot your system again to make it effective.</p>
+
+<p>Now the installation of CUDA and cuDNN is finished, you can use your GPU in deep learning packages now.</p>
+
+
+    
+
+      </div>
+
+      <div class="row">
+        <div class="large-6 columns">
+        <p class="text-left" style="padding:15px 0px;">
+      
+          <a href="15152585359421.html" 
+          title="Previous Post: Markdown syntax guide full version">&laquo; Markdown syntax guide full version</a>
+      
+        </p>
+        </div>
+        <div class="large-6 columns">
+      <p class="text-right" style="padding:15px 0px;">
+      
+          <a  href="15152368299031.html" 
+          title="Next Post: Setting up a blog on Github Pages that can be updated using only your iPad/iPhone">Setting up a blog on Github Pages that can be updated using only your iPad/iPhone &raquo;</a>
+      
+      </p>
+        </div>
+      </div>
+      <div class="comments-wrap">
+        <div class="share-comments">
+          <div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = https://superkerokero.github.io;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = superkerokeroblog; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://superkerokero-blog.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+          
+            <div id="disqus_thread"></div>
+          
+
+          
+        </div>
+      </div>
+    </div><!-- article-wrap -->
+  </div><!-- large 8 -->
+
+
+
+
+ <div class="large-4 medium-4 columns">
+  <div class="hide-for-small">
+    <div id="sidebar" class="sidebar">
+          <div id="site-info" class="site-info">
+            
+                <div class="site-a-logo"><img src="asset/img/icon.png" /></div>
+            
+                <h1>Computational Nonsense</h1>
+                <div class="site-des">Superkerokero's personal blog </div>
+                <div class="social">
+<a target="_blank" class="facebook" href="https://www.facebook.com/lingjian.wang.7" title="Facebook">Facebook</a>
+
+
+
+
+
+
+
+<a target="_blank" class="twitter" target="_blank" href="https://twitter.com/windd1231" title="Twitter">Twitter</a>
+<a target="_blank" class="github" target="_blank" href="https://superkerokero.github.com" title="GitHub">GitHub</a>
+<a target="_blank" class="email" href="mailto:superkerokero@outlook.com" title="Email">Email</a>
+  <a target="_blank" class="rss" href="atom.xml" title="RSS">RSS</a>
+                
+              	 </div>
+          	</div>
+
+             
+
+              <div id="site-categories" class="side-item ">
+                <div class="side-header">
+                  <h2>Categories</h2>
+                </div>
+                <div class="side-content">
+
+      	<p class="cat-list">
+        
+            <a href="hackers.html"><strong>Hacker's</strong></a>
+        
+            <a href="misc.html"><strong>MISC</strong></a>
+         
+        </p>
+
+
+                </div>
+              </div>
+
+              <div id="site-categories" class="side-item">
+                <div class="side-header">
+                  <h2>Recent Posts</h2>
+                </div>
+                <div class="side-content">
+                <ul class="posts-list">
+	      
+		      
+			      <li class="post">
+			        <a href="15152601961161.html">Notes on reverse SSH tunnel: Connect to servers behind NATs and firewalls through publicly available middle server</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152599330196.html">Slack webhooks for dummies: a beginer's guide to making your own slack bots using Python</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152598378572.html">Some notes on the use of "sed" command for text processing automation</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152585359421.html">Markdown syntax guide full version</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152582683289.html">How to disable Nouvean driver and Install CUDA 8.0 & cuDNN 5.1 on Fedora 17</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152368299031.html">Setting up a blog on Github Pages that can be updated using only your iPad/iPhone</a>
+			      </li>
+		     
+		   
+		  		</ul>
+                </div>
+              </div>
+        </div><!-- sidebar -->
+      </div><!-- hide for small -->
+</div><!-- large 4 -->
+
+</div><!-- row -->
+
+ <div class="page-bottom clearfix">
+    <div class="row">
+        <p class="copyright">Copyright &copy; superkerokero 2018 Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a>,&nbsp; Theme used <a target="_blank" href="http://github.com">GitHub CSS</a>.</p>
+    </div>
+</div>
+
+</section>
+</div>
+</div>
+
+
+<script type="text/javascript">
+    var disqus_shortname = 'superkerokero-blog';
+
+    (function() {
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+
+<script type="text/javascript">
+    var disqus_shortname = 'superkerokero-blog';
+
+    (function() {
+        var s = document.createElement('script');
+        s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+ 
+
+<script src="asset/js/foundation.min.js"></script>
+<script>
+    $(document).foundation();
+
+    function fixSidebarHeight() {
+        var w1 = $('.markdown-body').height();
+        var w2 = $('#sidebar').height();
+        if (w1 > w2) {
+            $('#sidebar').height(w1);
+        };
+    }
+    $(function() {
+        fixSidebarHeight();
+    })
+    $(window).load(function() {
+        fixSidebarHeight();
+    });
+</script>
+
+<script src="asset/chart/all-min.js"></script><script type="text/javascript">$(function(){    var mwebii=0;    var mwebChartEleId = 'mweb-chart-ele-';    $('pre>code').each(function(){        mwebii++;        var eleiid = mwebChartEleId+mwebii;        if($(this).hasClass('language-sequence')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = Diagram.parse($(this).text());            diagram.drawSVG(eleiid,{theme: 'simple'});        }else if($(this).hasClass('language-flow')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = flowchart.parse($(this).text());            diagram.drawSVG(eleiid);        }    });});</script> <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({TeX: { equationNumbers: { autoNumber: "AMS" } }});</script> </script><!-- Go to www.addthis.com/dashboard to customize your tools --> <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5a5105188906fe47"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,499 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+    
+  Slack webhooks for dummies: a beginer's guide to making your own slack bots using Python - Computational Nonsense
+  
+  </title>
+  
+  
+  <link href="atom.xml" rel="alternate" title="Computational Nonsense" type="application/atom+xml">
+    <link rel="stylesheet" href="asset/css/foundation.min.css" />
+    <link rel="stylesheet" href="asset/css/docs.css" />
+    <link href="asset/css/clean-blog.min.css" rel="stylesheet">
+    <script src="asset/js/vendor/modernizr.js"></script>
+    <script src="asset/js/vendor/jquery.js"></script>
+  <script src="asset/highlightjs/highlight.pack.js"></script>
+  <link href="asset/highlightjs/styles/github.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script>hljs.initHighlightingOnLoad();</script>
+<script type="text/javascript">
+  function before_search(){
+    var searchVal = 'site:superkerokero.github.io ' + document.getElementById('search_input').value;
+    document.getElementById('search_q').value = searchVal;
+    return true;
+  }
+</script>
+  </head>
+  <body class="antialiased hide-extras">
+    
+    <div class="marketing off-canvas-wrap" data-offcanvas>
+      <div class="inner-wrap">
+
+
+<nav class="top-bar docs-bar hide-for-small" data-topbar>
+
+
+  <section class="top-bar-section">
+  <div class="row">
+      <div style="position: relative;width:100%;"><div style="position: absolute; width:100%;">
+        <ul id="main-menu" class="left">
+        
+        <li id=""><a target="_self" href="index.html">Home</a></li>
+        
+        <li id=""><a target="_self" href="archives.html">Archives</a></li>
+        
+        </ul>
+
+        <ul class="right" id="search-wrap">
+          <li>
+<form target="_blank" onsubmit="return before_search();" action="http://google.com/search" method="get">
+    <input type="hidden" id="search_q" name="q" value="" />
+    <input tabindex="1" type="search" id="search_input"  placeholder="Search"/>
+</form>
+</li>
+          </ul>
+      </div></div>
+  </div>
+  </section>
+
+</nav>
+
+        <nav class="tab-bar show-for-small">
+  <a href="javascript:void(0)" class="left-off-canvas-toggle menu-icon">
+    <span> &nbsp; Computational Nonsense</span>
+  </a>
+</nav>
+
+<header class="masthead" id='masthead'></header>
+
+<aside class="left-off-canvas-menu">
+      <ul class="off-canvas-list">
+       
+       <li><a href="index.html">HOME</a></li>
+    <li><a href="archives.html">Archives</a></li>
+    <li><a href="about.html">ABOUT</a></li>
+
+    <li><label>Categories</label></li>
+
+        
+            <li><a href="hackers.html">Hacker's</a></li>
+        
+            <li><a href="misc.html">MISC</a></li>
+         
+
+      </ul>
+    </aside>
+
+<a class="exit-off-canvas" href="#"></a>
+
+
+        <section id="main-content" role="main" class="scroll-container">
+ <script type="text/javascript">
+  $(function(){
+    $('#menu_item_index').addClass('is_active');
+  });
+</script>
+<div class="row">
+  <div class="large-8 medium-8 columns">
+      <div class="markdown-body article-wrap">
+       <div class="article">
+          
+          <h1>Slack webhooks for dummies: a beginer's guide to making your own slack bots using Python</h1>
+     
+        <div class="read-more clearfix">
+          <span class="date">2018/1/7 2:32 AM</span>
+
+          <span>posted in&nbsp;</span> 
+          
+              <span class="posted-in"><a href='hackers.html'>Hacker's</a></span>
+           
+         
+          <span class="comments">
+            
+              <a href="https://superkerokero.github.io/15152599330196.html#disqus_thread">comments</a>
+            
+
+            
+          </span>
+
+        </div>
+      </div><!-- article -->
+
+      <div class="article-content">
+      <h2 id="toc_0">What is slack</h2>
+
+<p>Slack is a cloud-based set of team collaboration tools and services, founded by Stewart Butterfield. Slack began as an internal tool used by their company, Tiny Speck, in the development of Glitch, a now defunct online game. The name is an acronym for &quot;Searchable Log of All Conversation and Knowledge&quot;.<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup></p>
+
+<span id="more"></span><!-- more -->
+
+<h2 id="toc_1">What is webhook</h2>
+
+<p>A webhook in web development is a method of augmenting or altering the behavior of a web page, or web application, with custom callbacks. These callbacks may be maintained, modified, and managed by third-party users and developers who may not necessarily be affiliated with the originating website or application. The term &quot;webhook&quot; was coined by Jeff Lindsay in 2007 from the computer programming term hook.<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup></p>
+
+<h2 id="toc_2">Slack&#39;s webhook</h2>
+
+<p>Slack offers two kinds of webhooks to allow the communication with the slack channels. </p>
+
+<h3 id="toc_3">1. Incoming Webhooks</h3>
+
+<p>Incoming Webhooks are a simple way to post messages from external sources into Slack. They make use of normal HTTP requests with a JSON payload that includes the message text and some options. Message Attachments can also be used in Incoming Webhooks to display richly-formatted messages that stand out from regular chat messages.</p>
+
+<h3 id="toc_4">2. Outgoing webhooks</h3>
+
+<p>Outgoing webhooks will send an HTTP POST request to your specified URL when a message matches one or both of the following conditions:</p>
+
+<ul>
+<li>The message is in the specified channel</li>
+<li>The message begins with one of the defined trigger word(s)</li>
+</ul>
+
+<p>This is useful for providing automated responses to messages your team members post. For example, you might have a service that posts the status of a server. This service could receive the HTTP POST from Slack and automatically respond with a status update.</p>
+
+<p>The outgoing webhook integration is only available in public channels. If you would like to get data out of private groups and DMs in real-time, try a slash command.</p>
+
+<p>To summarize, incoming webhooks allows you to send messages to a slack channel; while outgoing webhooks allows you to get some message from a slack channel and send responses to it.</p>
+
+<h2 id="toc_5">How a slack robot works using webhooks</h2>
+
+<p>A slack robot is basically a piece of software that </p>
+
+<ul>
+<li>takes some informaton from either external source(<em>e.g.</em> a web crawler) of from a slack channel(using the outgoing webhook),</li>
+<li>process the information and send some information back to the slack channel(using either the incoming webhook or the response function of the outgoing webhook).</li>
+</ul>
+
+<p>Now let&#39;s build a simple slack bot that looks at <a href="https://stackoverflow.com/questions">stackoverflow&#39;s question page</a> every minute, grab the current number of total questions, and return this information to our slack channel using incoming webhook.<br/>
+<img src="http://i.imgur.com/aOqzsmu.png" alt="stackoverflow question page"/></p>
+
+<h3 id="toc_6">1. Add incoming webhooks integration in slack</h3>
+
+<p>Go to slacks&#39; <a href="https://my.slack.com/services/new/incoming-webhook/">incoming webhook integration page</a> to choose a slack channel and click the <strong>Add Incoming WebHooks Integration</strong> button to add a new incoming webhook of your own. <br/>
+<img src="http://i.imgur.com/R8UPaoe.png" alt="Incoming WebHooks"/><br/>
+Copy the generated <strong>WebHook URL</strong> and store it somewhere, you will need it later. You can also change the name/icon/description of your slack bot here.</p>
+
+<h3 id="toc_7">2. Create a simple web crawler in python</h3>
+
+<p>Now we will create a python program to do the web crawling and send the message. For html parsing, we will be using BeautifulSoup4 and lxml here. Install it using the following command if you don&#39;t already them installed:</p>
+
+<pre><code class="language-python">pip install beautifulsoup4 lxml
+</code></pre>
+
+<p>Now create a new python script file, <strong>scraper.py</strong> like this:<br/>
+First import all needed libraries.</p>
+
+<pre><code class="language-python"># Import all needed libraries
+from bs4 import BeautifulSoup as bs
+import urllib.request
+import threading
+import requests
+import json
+import time
+</code></pre>
+
+<p>Then add a function called <strong>checkStatus</strong> to do web crawling.</p>
+
+<pre><code class="language-python">def checkStatus():
+    # Function that checks a specific webpage and returns the information as string.
+    url = &#39;https://stackoverflow.com/questions&#39; # The URL of sltackoverflow.
+    headers = {
+                &quot;User-Agent&quot;: &quot;Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:47.0) Gecko/20100101 Firefox/47.0&quot;,
+                } # Add browser header to your http request to avoid blocking.
+    req = urllib.request.Request(url=url, headers=headers)
+    try:
+        page = urllib.request.urlopen(req)
+    except:
+        return &#39;503: service unavailable, try again later.&#39;
+    soup = bs(page, &quot;lxml&quot;)
+    count = soup.find(&quot;div&quot;, class_=&#39;summarycount al&#39;)
+    return count.string
+</code></pre>
+
+<p>Then add a function called <strong>notify</strong> to send data to your slack channel using incoming webhook.</p>
+
+<pre><code class="language-python">def notify(data):
+    # Function that send data in a string to your slack channel using incoming webhook
+    slack_url = &#39;[PASTE YOUR GENERATED INCOMING WEBHOOK URL HERE]&#39;
+    requests.post(slack_url, data = json.dumps({
+            &#39;text&#39;: data,
+            &#39;username&#39;: &#39;Tornado-webhook-notify&#39;,
+            &#39;icon_emoji&#39;: &#39;:bulb:&#39;,
+            &#39;link_names&#39;: 1,
+        }))
+</code></pre>
+
+<p>Create a python thread class to be able to run some function at some specified time interval.</p>
+
+<pre><code class="language-python"># Create a recursive thread to run the checkup every 1 minute.
+class RecursiveThread(threading.Thread):
+    def __init__(self, event):
+        threading.Thread.__init__(self)
+        self.stopped = event
+
+    def run(self):
+        # Set the number to 60.0 to run every 1 minute.
+        while not self.stopped.wait(60.0): 
+            status = checkStatus()
+            notify(&#39;The total question number is: &#39; + status)
+</code></pre>
+
+<p>Then at last call these functions and classes to check the web site for 3 minutes.</p>
+
+<pre><code class="language-python">if __name__ == &#39;__main__&#39;:
+        # Create the event used to stop the thread.
+        stopFlag = threading.Event() 
+        # Instantialize the thread.
+        thread = RecursiveThread(stopFlag)
+        # Start the thread.
+        thread.start()
+        # Wait for some time(3 minutes).
+        time.sleep(180.0)
+        # Use the flag to stop the thread.
+        stopFlag.set()
+</code></pre>
+
+<p>If successful, you shoud be able to see the message telling you the current stackoverflow question number 3 times in your slack channel.</p>
+
+<p><img src="http://i.imgur.com/Usg0YdZ.png" alt="slack message"/></p>
+
+<h2 id="toc_8">Add more control using outgoing webhooks</h2>
+
+<p>The above slack bot is already quite practically useful(you can do a bunch of things like auto checking the price of a apecific item in an online store and such folloing the same logic), but to add more control of the bot behavior, we need the outgoing webhooks. In order to use outgoing webhook, you need a server machine that can be accessed from the internet. Once you have the server setup, you only need to add a server logic that listens to the POST request from your slack channel and responses to it. Python frameworks like <a href="http://www.tornadoweb.org/en/stable/">Tornado</a> and <a href="https://www.djangoproject.com/">Django</a> can help you do this relatively easily.<br/>
+Setting up a server to handle RESTful APIs is a rather broad topic and I won&#39;t do it here. It also seems that slack is deprecating the outgoing webhooks as well.<br/>
+<img src="http://i.imgur.com/Mmk6B6d.png" alt="deprecating outgoing webhook"/><br/>
+Maybe I will write about building slack apps using their latest APIs in the future. Also I think it is noteworthy that there are alternatives to slack like <a href="https://rocket.chat/">Rocket.Chat</a> that allows the user to store their messages and information in their own servers for credential reasons(this is impossible with slack). So maybe it&#39;s better to these alternatives instead.</p>
+
+<div class="footnotes">
+<hr/>
+<ol>
+
+<li id="fn1">
+<p><a href="https://en.wikipedia.org/wiki/Slack_(software)">Slack (software) from Wikipedia</a>&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p><a href="https://en.wikipedia.org/wiki/Webhook">Webhook from Wikipedia</a>&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+
+    
+
+      </div>
+
+      <div class="row">
+        <div class="large-6 columns">
+        <p class="text-left" style="padding:15px 0px;">
+      
+          <a href="15152601961161.html" 
+          title="Previous Post: Notes on reverse SSH tunnel: Connect to servers behind NATs and firewalls through publicly available middle server">&laquo; Notes on reverse SSH tunnel: Connect to servers behind NATs and firewalls through publicly available middle server</a>
+      
+        </p>
+        </div>
+        <div class="large-6 columns">
+      <p class="text-right" style="padding:15px 0px;">
+      
+          <a  href="15152598378572.html" 
+          title="Next Post: Some notes on the use of "sed" command for text processing automation">Some notes on the use of "sed" command for text processing automation &raquo;</a>
+      
+      </p>
+        </div>
+      </div>
+      <div class="comments-wrap">
+        <div class="share-comments">
+          <div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = https://superkerokero.github.io;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = superkerokeroblog; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://superkerokero-blog.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+          
+            <div id="disqus_thread"></div>
+          
+
+          
+        </div>
+      </div>
+    </div><!-- article-wrap -->
+  </div><!-- large 8 -->
+
+
+
+
+ <div class="large-4 medium-4 columns">
+  <div class="hide-for-small">
+    <div id="sidebar" class="sidebar">
+          <div id="site-info" class="site-info">
+            
+                <div class="site-a-logo"><img src="asset/img/icon.png" /></div>
+            
+                <h1>Computational Nonsense</h1>
+                <div class="site-des">Superkerokero's personal blog </div>
+                <div class="social">
+<a target="_blank" class="facebook" href="https://www.facebook.com/lingjian.wang.7" title="Facebook">Facebook</a>
+
+
+
+
+
+
+
+<a target="_blank" class="twitter" target="_blank" href="https://twitter.com/windd1231" title="Twitter">Twitter</a>
+<a target="_blank" class="github" target="_blank" href="https://superkerokero.github.com" title="GitHub">GitHub</a>
+<a target="_blank" class="email" href="mailto:superkerokero@outlook.com" title="Email">Email</a>
+  <a target="_blank" class="rss" href="atom.xml" title="RSS">RSS</a>
+                
+              	 </div>
+          	</div>
+
+             
+
+              <div id="site-categories" class="side-item ">
+                <div class="side-header">
+                  <h2>Categories</h2>
+                </div>
+                <div class="side-content">
+
+      	<p class="cat-list">
+        
+            <a href="hackers.html"><strong>Hacker's</strong></a>
+        
+            <a href="misc.html"><strong>MISC</strong></a>
+         
+        </p>
+
+
+                </div>
+              </div>
+
+              <div id="site-categories" class="side-item">
+                <div class="side-header">
+                  <h2>Recent Posts</h2>
+                </div>
+                <div class="side-content">
+                <ul class="posts-list">
+	      
+		      
+			      <li class="post">
+			        <a href="15152601961161.html">Notes on reverse SSH tunnel: Connect to servers behind NATs and firewalls through publicly available middle server</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152599330196.html">Slack webhooks for dummies: a beginer's guide to making your own slack bots using Python</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152598378572.html">Some notes on the use of "sed" command for text processing automation</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152585359421.html">Markdown syntax guide full version</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152582683289.html">How to disable Nouvean driver and Install CUDA 8.0 & cuDNN 5.1 on Fedora 17</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152368299031.html">Setting up a blog on Github Pages that can be updated using only your iPad/iPhone</a>
+			      </li>
+		     
+		   
+		  		</ul>
+                </div>
+              </div>
+        </div><!-- sidebar -->
+      </div><!-- hide for small -->
+</div><!-- large 4 -->
+
+</div><!-- row -->
+
+ <div class="page-bottom clearfix">
+    <div class="row">
+        <p class="copyright">Copyright &copy; superkerokero 2018 Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a>,&nbsp; Theme used <a target="_blank" href="http://github.com">GitHub CSS</a>.</p>
+    </div>
+</div>
+
+</section>
+</div>
+</div>
+
+
+<script type="text/javascript">
+    var disqus_shortname = 'superkerokero-blog';
+
+    (function() {
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+
+<script type="text/javascript">
+    var disqus_shortname = 'superkerokero-blog';
+
+    (function() {
+        var s = document.createElement('script');
+        s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+ 
+
+<script src="asset/js/foundation.min.js"></script>
+<script>
+    $(document).foundation();
+
+    function fixSidebarHeight() {
+        var w1 = $('.markdown-body').height();
+        var w2 = $('#sidebar').height();
+        if (w1 > w2) {
+            $('#sidebar').height(w1);
+        };
+    }
+    $(function() {
+        fixSidebarHeight();
+    })
+    $(window).load(function() {
+        fixSidebarHeight();
+    });
+</script>
+
+<script src="asset/chart/all-min.js"></script><script type="text/javascript">$(function(){    var mwebii=0;    var mwebChartEleId = 'mweb-chart-ele-';    $('pre>code').each(function(){        mwebii++;        var eleiid = mwebChartEleId+mwebii;        if($(this).hasClass('language-sequence')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = Diagram.parse($(this).text());            diagram.drawSVG(eleiid,{theme: 'simple'});        }else if($(this).hasClass('language-flow')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = flowchart.parse($(this).text());            diagram.drawSVG(eleiid);        }    });});</script> <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({TeX: { equationNumbers: { autoNumber: "AMS" } }});</script> </script><!-- Go to www.addthis.com/dashboard to customize your tools --> <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5a5105188906fe47"></script>
+
+</body>
+
+</html>

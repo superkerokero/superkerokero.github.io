@@ -1,0 +1,439 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+    
+  Some notes on the use of "sed" command for text processing automation - Computational Nonsense
+  
+  </title>
+  
+  
+  <link href="atom.xml" rel="alternate" title="Computational Nonsense" type="application/atom+xml">
+    <link rel="stylesheet" href="asset/css/foundation.min.css" />
+    <link rel="stylesheet" href="asset/css/docs.css" />
+    <link href="asset/css/clean-blog.min.css" rel="stylesheet">
+    <script src="asset/js/vendor/modernizr.js"></script>
+    <script src="asset/js/vendor/jquery.js"></script>
+  <script src="asset/highlightjs/highlight.pack.js"></script>
+  <link href="asset/highlightjs/styles/github.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script>hljs.initHighlightingOnLoad();</script>
+<script type="text/javascript">
+  function before_search(){
+    var searchVal = 'site:superkerokero.github.io ' + document.getElementById('search_input').value;
+    document.getElementById('search_q').value = searchVal;
+    return true;
+  }
+</script>
+  </head>
+  <body class="antialiased hide-extras">
+    
+    <div class="marketing off-canvas-wrap" data-offcanvas>
+      <div class="inner-wrap">
+
+
+<nav class="top-bar docs-bar hide-for-small" data-topbar>
+
+
+  <section class="top-bar-section">
+  <div class="row">
+      <div style="position: relative;width:100%;"><div style="position: absolute; width:100%;">
+        <ul id="main-menu" class="left">
+        
+        <li id=""><a target="_self" href="index.html">Home</a></li>
+        
+        <li id=""><a target="_self" href="archives.html">Archives</a></li>
+        
+        </ul>
+
+        <ul class="right" id="search-wrap">
+          <li>
+<form target="_blank" onsubmit="return before_search();" action="http://google.com/search" method="get">
+    <input type="hidden" id="search_q" name="q" value="" />
+    <input tabindex="1" type="search" id="search_input"  placeholder="Search"/>
+</form>
+</li>
+          </ul>
+      </div></div>
+  </div>
+  </section>
+
+</nav>
+
+        <nav class="tab-bar show-for-small">
+  <a href="javascript:void(0)" class="left-off-canvas-toggle menu-icon">
+    <span> &nbsp; Computational Nonsense</span>
+  </a>
+</nav>
+
+<header class="masthead" id='masthead'></header>
+
+<aside class="left-off-canvas-menu">
+      <ul class="off-canvas-list">
+       
+       <li><a href="index.html">HOME</a></li>
+    <li><a href="archives.html">Archives</a></li>
+    <li><a href="about.html">ABOUT</a></li>
+
+    <li><label>Categories</label></li>
+
+        
+            <li><a href="hackers.html">Hacker's</a></li>
+        
+            <li><a href="misc.html">MISC</a></li>
+         
+
+      </ul>
+    </aside>
+
+<a class="exit-off-canvas" href="#"></a>
+
+
+        <section id="main-content" role="main" class="scroll-container">
+ <script type="text/javascript">
+  $(function(){
+    $('#menu_item_index').addClass('is_active');
+  });
+</script>
+<div class="row">
+  <div class="large-8 medium-8 columns">
+      <div class="markdown-body article-wrap">
+       <div class="article">
+          
+          <h1>Some notes on the use of "sed" command for text processing automation</h1>
+     
+        <div class="read-more clearfix">
+          <span class="date">2018/1/7 2:30 AM</span>
+
+          <span>posted in&nbsp;</span> 
+          
+              <span class="posted-in"><a href='hackers.html'>Hacker's</a></span>
+           
+         
+          <span class="comments">
+            
+              <a href="https://superkerokero.github.io/15152598378572.html#disqus_thread">comments</a>
+            
+
+            
+          </span>
+
+        </div>
+      </div><!-- article -->
+
+      <div class="article-content">
+      <p><strong>sed</strong>, short for &quot;stream editor&quot;, allows you to filter and transform text. A stream editor is used to perform basic text transformations on an input stream (a file, or input from a pipeline). While in some ways similar to an editor which permits scripted edits (such as ed), <strong>sed</strong> works by making only one pass over the input(s), and is consequently more efficient. But it is <strong>sed</strong>&#39;s ability to filter text in a pipeline which particularly distinguishes it from other types of editors.<sup id="fnref1"><a href="#fn1" rel="footnote">1</a></sup></p>
+
+<span id="more"></span><!-- more -->
+
+<h2 id="toc_0">&quot;In-place&quot; mode</h2>
+
+<table>
+<thead>
+<tr>
+<th>Options</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>-n,--quiet, --silent</td>
+<td>Suppress automatic printing of pattern space.</td>
+</tr>
+<tr>
+<td>-e script, --expression=script</td>
+<td>Add the script script to the commands to be executed.</td>
+</tr>
+<tr>
+<td>-i[SUFFIX], --in-place[=SUFFIX]</td>
+<td>Edit files in place (this makes a backup with file extension SUFFIX, if SUFFIX is supplied).</td>
+</tr>
+</tbody>
+</table>
+
+<p>The &quot;-i&quot; option is used to make modifications to files immediately. You can also make backups if you offer &quot;SUFFIX&quot; specifications as well. The commonly used &quot;-e&quot; option doesn&#39;t modify the files.</p>
+
+<h2 id="toc_1">Use inside bash scripts</h2>
+
+<p>Using <strong>sed</strong> inside some bash script is an elegant way to exploit its true power. But here are some pitfalls you might come across along the way. If you like to <strong>echo</strong> the commands you want to excute before the actual excution, you might get the error &quot; :sed: -e expression #1, char 1: unknown command: &#39; &quot; &#39; &quot;.<br/>
+Below is a typical case:</p>
+
+<pre><code class="language-bash">inFile=&quot;$WORK/${SimName}.in&quot;
+replaceCmd=&quot;sed &#39;s/sim.dat/${SimName}.dat/g&#39; $inFile&quot;
+echo $replaceCmd
+$replaceCmd
+</code></pre>
+
+<p>It seems that the single quotes inside the string &quot;replaceCmd&quot; weren&#39;t recongized by the <strong>sed</strong> command. </p>
+
+<p>One way to get across this problem is to use <strong>eval</strong> command.<br/>
+Instead of using </p>
+
+<pre><code class="language-bash">$replaceCmd
+</code></pre>
+
+<p>, you can use </p>
+
+<pre><code class="language-bash">eval &quot;$replaceCmd&quot;
+</code></pre>
+
+<p>This will make the <strong>sed</strong> command work properly. <br/>
+But using <strong>eval</strong> is in general not recommended due to security reasons.<sup id="fnref2"><a href="#fn2" rel="footnote">2</a></sup></p>
+
+<p>The recommended method is to wrap the <strong>sed</strong> command inside a function:</p>
+
+<pre><code class="language-bash">replaceCmd(){
+    sed &quot;s/sim.dat/$1.dat/g&quot; &quot;$2&quot;
+}
+inFile=&quot;$work/$SimName.in&quot;
+replaceCmd &quot;$SimName&quot; &quot;$inFile&quot;
+</code></pre>
+
+<p>This method is found in LinuxQustions.org forum.<sup id="fnref3"><a href="#fn3" rel="footnote">3</a></sup></p>
+
+<blockquote>
+<p>Oh, hells no! Never, and I mean NEVER, use eval for something as trivial as this. Indeed, you should only very rarely need it at all. It can be quite a security risk, and is almost never really necessary in general scripting.</p>
+
+<p>In addition, variables are for storing data, not code. The spaces, quotes, and other special characters cease to be special when in a variable (unless the expansion is unquoted, then some of them still have an effect, but likely not the one you want; see my next point), and in any case leads to unclear, obfuscated code flow. If you need repeated use of the same command, don&#39;t put it inside a variable, use a function.</p>
+
+<p>A second problem here is that if the sed command is surrounded by single quotes, the variable inside them does not get expanded. No quotes is even worse, as the shell attempts to perform word-splitting and glob expansion after the substitution.</p>
+</blockquote>
+
+<div class="footnotes">
+<hr/>
+<ol>
+
+<li id="fn1">
+<p><a href="https://www.computerhope.com/unix/used.htm">Computer Hope: Linux sed command</a>&nbsp;<a href="#fnref1" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn2">
+<p><a href="http://mywiki.wooledge.org/BashFAQ/048">Eval command and security issues</a>&nbsp;<a href="#fnref2" rev="footnote">&#8617;</a></p>
+</li>
+
+<li id="fn3">
+<p><a href="http://www.linuxquestions.org/questions/linux-newbie-8/sed-gives-sed-e-expression-1-char-1-unknown-command-%60%27%27-947056/">[SOLVED] sed gives :sed: -e expression #1, char 1: unknown command: `&#39;&#39;</a>&nbsp;<a href="#fnref3" rev="footnote">&#8617;</a></p>
+</li>
+
+</ol>
+</div>
+
+
+    
+
+      </div>
+
+      <div class="row">
+        <div class="large-6 columns">
+        <p class="text-left" style="padding:15px 0px;">
+      
+          <a href="15152599330196.html" 
+          title="Previous Post: Slack webhooks for dummies: a beginer's guide to making your own slack bots using Python">&laquo; Slack webhooks for dummies: a beginer's guide to making your own slack bots using Python</a>
+      
+        </p>
+        </div>
+        <div class="large-6 columns">
+      <p class="text-right" style="padding:15px 0px;">
+      
+          <a  href="15152585359421.html" 
+          title="Next Post: Markdown syntax guide full version">Markdown syntax guide full version &raquo;</a>
+      
+      </p>
+        </div>
+      </div>
+      <div class="comments-wrap">
+        <div class="share-comments">
+          <div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = https://superkerokero.github.io;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = superkerokeroblog; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://superkerokero-blog.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+          
+            <div id="disqus_thread"></div>
+          
+
+          
+        </div>
+      </div>
+    </div><!-- article-wrap -->
+  </div><!-- large 8 -->
+
+
+
+
+ <div class="large-4 medium-4 columns">
+  <div class="hide-for-small">
+    <div id="sidebar" class="sidebar">
+          <div id="site-info" class="site-info">
+            
+                <div class="site-a-logo"><img src="asset/img/icon.png" /></div>
+            
+                <h1>Computational Nonsense</h1>
+                <div class="site-des">Superkerokero's personal blog </div>
+                <div class="social">
+<a target="_blank" class="facebook" href="https://www.facebook.com/lingjian.wang.7" title="Facebook">Facebook</a>
+
+
+
+
+
+
+
+<a target="_blank" class="twitter" target="_blank" href="https://twitter.com/windd1231" title="Twitter">Twitter</a>
+<a target="_blank" class="github" target="_blank" href="https://superkerokero.github.com" title="GitHub">GitHub</a>
+<a target="_blank" class="email" href="mailto:superkerokero@outlook.com" title="Email">Email</a>
+  <a target="_blank" class="rss" href="atom.xml" title="RSS">RSS</a>
+                
+              	 </div>
+          	</div>
+
+             
+
+              <div id="site-categories" class="side-item ">
+                <div class="side-header">
+                  <h2>Categories</h2>
+                </div>
+                <div class="side-content">
+
+      	<p class="cat-list">
+        
+            <a href="hackers.html"><strong>Hacker's</strong></a>
+        
+            <a href="misc.html"><strong>MISC</strong></a>
+         
+        </p>
+
+
+                </div>
+              </div>
+
+              <div id="site-categories" class="side-item">
+                <div class="side-header">
+                  <h2>Recent Posts</h2>
+                </div>
+                <div class="side-content">
+                <ul class="posts-list">
+	      
+		      
+			      <li class="post">
+			        <a href="15152601961161.html">Notes on reverse SSH tunnel: Connect to servers behind NATs and firewalls through publicly available middle server</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152599330196.html">Slack webhooks for dummies: a beginer's guide to making your own slack bots using Python</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152598378572.html">Some notes on the use of "sed" command for text processing automation</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152585359421.html">Markdown syntax guide full version</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152582683289.html">How to disable Nouvean driver and Install CUDA 8.0 & cuDNN 5.1 on Fedora 17</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152368299031.html">Setting up a blog on Github Pages that can be updated using only your iPad/iPhone</a>
+			      </li>
+		     
+		   
+		  		</ul>
+                </div>
+              </div>
+        </div><!-- sidebar -->
+      </div><!-- hide for small -->
+</div><!-- large 4 -->
+
+</div><!-- row -->
+
+ <div class="page-bottom clearfix">
+    <div class="row">
+        <p class="copyright">Copyright &copy; superkerokero 2018 Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a>,&nbsp; Theme used <a target="_blank" href="http://github.com">GitHub CSS</a>.</p>
+    </div>
+</div>
+
+</section>
+</div>
+</div>
+
+
+<script type="text/javascript">
+    var disqus_shortname = 'superkerokero-blog';
+
+    (function() {
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+
+<script type="text/javascript">
+    var disqus_shortname = 'superkerokero-blog';
+
+    (function() {
+        var s = document.createElement('script');
+        s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+ 
+
+<script src="asset/js/foundation.min.js"></script>
+<script>
+    $(document).foundation();
+
+    function fixSidebarHeight() {
+        var w1 = $('.markdown-body').height();
+        var w2 = $('#sidebar').height();
+        if (w1 > w2) {
+            $('#sidebar').height(w1);
+        };
+    }
+    $(function() {
+        fixSidebarHeight();
+    })
+    $(window).load(function() {
+        fixSidebarHeight();
+    });
+</script>
+
+<script src="asset/chart/all-min.js"></script><script type="text/javascript">$(function(){    var mwebii=0;    var mwebChartEleId = 'mweb-chart-ele-';    $('pre>code').each(function(){        mwebii++;        var eleiid = mwebChartEleId+mwebii;        if($(this).hasClass('language-sequence')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = Diagram.parse($(this).text());            diagram.drawSVG(eleiid,{theme: 'simple'});        }else if($(this).hasClass('language-flow')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = flowchart.parse($(this).text());            diagram.drawSVG(eleiid);        }    });});</script> <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({TeX: { equationNumbers: { autoNumber: "AMS" } }});</script> </script><!-- Go to www.addthis.com/dashboard to customize your tools --> <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5a5105188906fe47"></script>
+
+</body>
+
+</html>
