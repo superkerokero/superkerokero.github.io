@@ -4,7 +4,7 @@
   <title><![CDATA[Computational Nonsense]]></title>
   <link href="https://superkerokero.github.io/atom.xml" rel="self"/>
   <link href="https://superkerokero.github.io/"/>
-  <updated>2018-01-07T16:05:15+09:00</updated>
+  <updated>2018-01-07T16:06:14+09:00</updated>
   <id>https://superkerokero.github.io/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -20,7 +20,7 @@
     <content type="html"><![CDATA[
 <blockquote>
 <p>Many phenomena in various science fields are mathematically expressed by using the well-known evolution equations. The diffusion equation is one of them, and mathematically corresponds to the Markov process in relation to the normal distribution rule.<br/>
-<div style="text-align: right"> <cite> &mdash;<a href="https://en.wikipedia.org/wiki/Diffusion_equation">Wikipedia: Diffusion equation</a></cite> </div></p>
+<div style="text-align: right"> <cite> **&mdash;<a href="https://en.wikipedia.org/wiki/Diffusion_equation">Wikipedia: Diffusion equation</a></cite> </div></p>
 </blockquote>
 
 <span id="more"></span><!-- more -->
@@ -172,8 +172,9 @@ and Boundary conditions: \( \rho_{0,j} = \rho_0\), \( \rho_{m,j} = \rho_m\), we 
 
 <p><img src="media/15153040186127/Screenshot%202018-01-07%2015.28.00.png" alt="Screenshot 2018-01-07 15.28.00"/></p>
 
-<p>Solving an example system with initial value of \(\rho=1.0\) at \(x=30 \unicode{x212B}\) and boundary conditions with \(\rho_L = \rho_R = 0\) using the potential profile of \(n_w = 0\).<br/>
-<img src="pics/potential-crank-nicolson.gif"></p>
+<p>Solving an example system with initial value of \(\rho=1.0\) at \(x=30 \unicode{x212B}\) and boundary conditions with \(\rho_L = \rho_R = 0\) using the potential profile of \(n_w = 0\).</p>
+
+<p><img src="media/15153040186127/potential-crank-nicolson.gif" alt="potential-crank-nicolson"/></p>
 
 <p>Potential used in this example and its derivatives are as follows:</p>
 
