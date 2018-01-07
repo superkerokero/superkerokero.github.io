@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
   <loc>https://superkerokero.github.io/</loc>
-  <lastmod>2018-01-07T05:22:22+09:00</lastmod>
+  <lastmod>2018-01-07T16:06:14+09:00</lastmod>
+</url>
+
+<url>
+  <loc>https://superkerokero.github.io/15153040186127.html</loc>
+  <lastmod>2018-01-07T14:46:58+09:00</lastmod>
 </url>
 
 <url>
@@ -42,7 +47,7 @@
 </url>
 
 <url>
-  <loc>https://superkerokero.github.io/misc.html</loc>
+  <loc>https://superkerokero.github.io/numerical.html</loc>
 </url>
 
 
