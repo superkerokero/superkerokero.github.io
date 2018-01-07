@@ -501,6 +501,15 @@
     border: 1px solid #4ec4fa;
 }
 
+#site-info .social a.soundcloud {
+    background: url('../img/social/soundcloud.png?1419407210') center no-repeat #EF7522;
+    border: 1px solid #EF7522
+}
+
+#site-info .social a.soundcloud:hover {
+    border: 1px solid rgb(255, 181, 43)
+}
+
 .home-categories {
     max-width: 640px;
 }
