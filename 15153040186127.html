@@ -1,0 +1,569 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+        <link rel="icon" href="asset/img/icon.png">
+    
+    <title>
+    
+  Notes on numerically solving diffusion equations. - Computational Nonsense
+  
+  </title>
+  
+  
+  <link href="atom.xml" rel="alternate" title="Computational Nonsense" type="application/atom+xml">
+    <link rel="stylesheet" href="asset/css/foundation.min.css" />
+    <link rel="stylesheet" href="asset/css/docs.css" />
+    <link href="asset/css/clean-blog.min.css" rel="stylesheet">
+    <script src="asset/js/vendor/modernizr.js"></script>
+    <script src="asset/js/vendor/jquery.js"></script>
+  <script src="asset/highlightjs/highlight.pack.js"></script>
+  <link href="asset/highlightjs/styles/github.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script>hljs.initHighlightingOnLoad();</script>
+<script type="text/javascript">
+  function before_search(){
+    var searchVal = 'site:superkerokero.github.io ' + document.getElementById('search_input').value;
+    document.getElementById('search_q').value = searchVal;
+    return true;
+  }
+</script>
+  </head>
+  <body class="antialiased hide-extras">
+    
+    <div class="marketing off-canvas-wrap" data-offcanvas>
+      <div class="inner-wrap">
+
+
+<nav class="top-bar docs-bar hide-for-small" data-topbar>
+
+
+  <section class="top-bar-section">
+  <div class="row">
+      <div style="position: relative;width:100%;"><div style="position: absolute; width:100%;">
+        <ul id="main-menu" class="left">
+        
+        <li id=""><a target="_self" href="index.html">Home</a></li>
+        
+        <li id=""><a target="_self" href="archives.html">Archives</a></li>
+        
+        </ul>
+
+        <ul class="right" id="search-wrap">
+          <li>
+<form target="_blank" onsubmit="return before_search();" action="https://google.com/search" method="get">
+    <input type="hidden" id="search_q" name="q" value="" />
+    <input tabindex="1" type="search" id="search_input"  placeholder="Search"/>
+</form>
+</li>
+          </ul>
+      </div></div>
+  </div>
+  </section>
+
+</nav>
+
+        <nav class="tab-bar show-for-small">
+  <a href="javascript:void(0)" class="left-off-canvas-toggle menu-icon">
+    <span> &nbsp; Computational Nonsense</span>
+  </a>
+</nav>
+
+<header class="masthead" id='masthead'></header>
+
+<aside class="left-off-canvas-menu">
+      <ul class="off-canvas-list">
+        
+        <li id=""><a target="_self" href="index.html">Home</a></li>
+        
+        <li id=""><a target="_self" href="archives.html">Archives</a></li>
+        
+
+    <li><label>Categories</label></li>
+
+        
+            <li><a href="hackers.html">Hacker's</a></li>
+        
+            <li><a href="numerical.html">Numerical</a></li>
+         
+
+      </ul>
+    </aside>
+
+<a class="exit-off-canvas" href="#"></a>
+
+
+        <section id="main-content" role="main" class="scroll-container"> <script type="text/javascript">
+  $(function(){
+    $('#menu_item_index').addClass('is_active');
+  });
+</script>
+<div class="row">
+  <div class="large-8 medium-8 columns">
+      <div class="markdown-body article-wrap">
+       <div class="article">
+          
+          <h1>Notes on numerically solving diffusion equations.</h1>
+     
+        <div class="read-more clearfix">
+          <span class="date">2018/1/7 14:46 PM</span>
+
+          <span>posted in&nbsp;</span> 
+          
+              <span class="posted-in"><a href='numerical.html'>Numerical</a></span>
+           
+         
+          <span class="comments">
+            
+              <a href="https://superkerokero.github.io/15153040186127.html#disqus_thread">comments</a>
+            
+
+            
+          </span>
+
+        </div>
+      </div><!-- article -->
+
+      <div class="article-content">
+      <blockquote>
+<p>Many phenomena in various science fields are mathematically expressed by using the well-known evolution equations. The diffusion equation is one of them, and mathematically corresponds to the Markov process in relation to the normal distribution rule.<br/>
+<div style="text-align: right"> <cite> &mdash;<a href="https://en.wikipedia.org/wiki/Diffusion_equation">Wikipedia: Diffusion equation</a></cite> </div></p>
+</blockquote>
+
+<span id="more"></span><!-- more -->
+
+<h2 id="toc_0">A. Standard diffusion equation</h2>
+
+<p>Standard diffusion equation is a simplistic second order partial differential equation written as:</p>
+
+<p>\[<br/>
+\begin{equation}<br/>
+\frac{\partial \rho(x, t)}{\partial t}<br/>
+= D \frac{\partial^2 \rho(x, t)}{\partial x^2}<br/>
+\end{equation}<br/>
+\]</p>
+
+<h3 id="toc_1">A1. Finite difference method for time and space</h3>
+
+<p>Finite difference of time:</p>
+
+<p>\begin{equation}<br/>
+\frac{\partial\rho}{\partial t} (x_i,t_j) = \frac{\rho(x_i, t_j + \Delta t) - \rho(x_i, t_j)}{\Delta t} + \mathcal{O}(\Delta t)<br/>
+\end{equation}</p>
+
+<p>Finite difference of space:</p>
+
+<p>\[<br/>
+\begin{equation}<br/>
+\frac{\partial^2\rho}{\partial x^2} (x_i,t_j) = \frac{\rho(x_i+\Delta x,t_j) - 2\rho(x_i,t_j) + \rho(x_i-\Delta x,t_j)}{dx^2} + \mathcal{O}(\Delta x^2)<br/>
+\end{equation}<br/>
+\]</p>
+
+<h3 id="toc_2">A2. Explicit scheme (forward time)</h3>
+
+<p>Apply equation(2) and (3) to equation(1), and let \(\rho_{i,j} = \rho(x_i,t_j)\), we get the expression of forward time evolution</p>
+
+<p>\[<br/>
+\begin{align}<br/>
+&amp;\ \frac{\rho_{i,j+1} - \rho_{i,j}}{\Delta t} = D \frac{\rho_{i+1,j} - 2\rho_{i,j} + \rho_{i-1,j}}{\Delta x^2} \\<br/>
+&amp;\Rightarrow \rho_{i,j+1} = (1 - 2\lambda) \rho_{i,j} + \lambda (\rho_{i+1,j} + \rho_{i-1, j})<br/>
+\end{align}<br/>
+\]</p>
+
+<p>where \[\lambda=\frac{D \cdot \Delta t}{\Delta x^2}\].<br/>
+Rewrite this in matrix form, </p>
+
+<p>\[<br/>
+\begin{equation}<br/>
+\vec{\rho}_{i, j+1} = A \vec{\rho}_{i, j} + R(\text{accounts for boundary  conditions})<br/>
+\end{equation}<br/>
+\]</p>
+
+<p>Supplemented by initial condition:  \( \rho_{i,0} = \rho(x_i)\),<br/>
+and Boundary conditions: \( \rho_{0,j} = \rho_0\), \( \rho_{m,j} = \rho_m\), we can solve it like this:</p>
+
+<p><img src="media/15153040186127/Screenshot%202018-01-07%2015.04.40.png" alt="Screenshot 2018-01-07 15.04.40"/></p>
+
+<p>*Sovling an example system with initial value of \(\rho_{center}=1.0\) at center and boundary conditions with \(\rho_L = \rho_R = 0\).</p>
+
+<p><img src="media/15153040186127/forward.gif" alt="forward" title="Solving standard diffusion equation using forward method"/></p>
+
+<h3 id="toc_3">A3. Implicit scheme (backward time)</h3>
+
+<p>In implicit scheme, time evolves backwards.</p>
+
+<p>\[<br/>
+\begin{align}<br/>
+&amp;\ \frac{\rho_{i,j} - \rho_{i,j-1}}{\Delta t} = D \frac{\rho_{i+1,j} - 2\rho_{i,j} + \rho_{i-1,j}}{\Delta x^2} \\<br/>
+&amp;\Rightarrow  (1 + 2\lambda) \rho_{i,j} - \lambda (\rho_{i+1,j} + \rho_{i-1, j}) = \rho_{i,j-1}<br/>
+\end{align}<br/>
+\]</p>
+
+<p>where \[\lambda=\frac{D \cdot \Delta t}{\Delta x^2}.\]<br/>
+Rewrite this in matrix form, </p>
+
+<p>\[<br/>
+\begin{equation}<br/>
+A \vec{\rho}_{i, j} - R = \vec{\rho}_{i, j - 1}<br/>
+\end{equation}<br/>
+\]</p>
+
+<p>Supplemented by initial condition:  \( \rho_{i,0} = \rho(x_i)\),<br/>
+and Boundary conditions: \( \rho_{0,j} = \rho_0\), \( \rho_{m,j} = \rho_m\), we can solve it like this:</p>
+
+<p><img src="media/15153040186127/Screenshot%202018-01-07%2015.18.52.png" alt="Screenshot 2018-01-07 15.18.52"/></p>
+
+<p>*Sovling an example system with initial value of \(\rho_{center}=1.0\) at center and boundary conditions with \(\rho_L = \rho_R = 0\).</p>
+
+<p><img src="media/15153040186127/backward.gif" alt="backward" title="Solving standard diffusion equation using backward method"/></p>
+
+<h3 id="toc_4">A4. Crank-Nicolson scheme</h3>
+
+<p>In Crank-Nicolson scheme, we take the average of explicit scheme and implicit scheme.</p>
+
+<p>\[<br/>
+\begin{align}<br/>
+&amp;\ \frac{\rho_{i,j + 1} - \rho_{i,j}}{\Delta t} = \frac{D}{2} ( \frac{\rho_{i+1,j} - 2\rho_{i,j} + \rho_{i-1,j}}{\Delta x^2} + \frac{\rho_{i + 1,j + 1} - 2\rho_{i,j + 1} + \rho_{i - 1,j + 1}}{\Delta x^2} ) \\<br/>
+&amp;\Rightarrow  (2 + 2\lambda) \rho_{i,j + 1} - \lambda (\rho_{i+1,j + 1} + \rho_{i-1, j + 1}) =  (2 - 2\lambda) \rho_{i,j} + \lambda (\rho_{i+1,j} + \rho_{i-1, j})<br/>
+\end{align}<br/>
+\]</p>
+
+<p>where \[\lambda=\frac{D \cdot \Delta t}{\Delta x^2}\].<br/>
+Rewrite this in matrix form, </p>
+
+<p>\[<br/>
+\begin{equation}<br/>
+A \vec{\rho}_{i, j + 1} - R = B \vec{\rho}_{i, j} + R<br/>
+\end{equation}<br/>
+\]</p>
+
+<p>Supplemented by initial condition:  \( \rho_{i,0} = \rho(x_i)\),<br/>
+and Boundary conditions: \( \rho_{0,j} = \rho_0\), \( \rho_{m,j} = \rho_m\), we can solve it like this:</p>
+
+<p><img src="media/15153040186127/Screenshot%202018-01-07%2015.25.12.png" alt="Screenshot 2018-01-07 15.25.12"/></p>
+
+<p>Solvlng an example system with initial value of \(\rho_{center}=1.0\) at center and boundary conditions with \(\rho_L = \rho_R = 0\).</p>
+
+<p><img src="media/15153040186127/crank-nicolson.gif" alt="crank-nicolson"/></p>
+
+<h2 id="toc_5">B. Solving diffusion equation with a potential profile.</h2>
+
+<p>\[<br/>
+\begin{equation}<br/>
+\frac{\partial \rho(x, t)}{\partial t}<br/>
+= D \frac{\partial}{\partial x}[ \frac{\partial \rho(x, t)}{\partial x} + \frac{1}{k_BT} \frac{\partial U(x)}{\partial x}\rho(x,t)] = D \frac{\partial^2 \rho(x, t)}{\partial x^2} + \frac{D}{k_BT} \cdot U^{\prime}(x) \cdot \frac{\partial \rho(x, t)}{\partial x} + \frac{D}{k_BT} U^{\prime \prime}(x) \rho(x, t)<br/>
+\end{equation}<br/>
+\]</p>
+
+<p>The finite difference in Crank-Nicolson scheme for the above equation is:</p>
+
+<p>\[<br/>
+\begin{align}<br/>
+&amp;\ \frac{\rho_{i,j + 1} - \rho_{i,j}}{\Delta t} = \frac{D}{2} ( \frac{\rho_{i+1,j} - 2\rho_{i,j} + \rho_{i-1,j}}{\Delta x^2} + \frac{\rho_{i + 1,j + 1} - 2\rho_{i,j + 1} + \rho_{i - 1,j + 1}}{\Delta x^2} ) + \frac{D \cdot U^{\prime}(x_i)}{2 k_BT} (\frac{\rho_{i + 1,j + 1} - \rho_{i - 1,j + 1}}{2 \Delta x} + \frac{\rho_{i + 1,j} - \rho_{i - 1, j}}{2 \Delta x}) + \frac{D \cdot U^{\prime \prime}(x_i)}{2 k_BT} (\rho_{i,j + 1} + \rho_{i,j}) \\<br/>
+&amp;\Rightarrow  (2 + 2\lambda + \tau_i) \rho_{i,j + 1} + (\eta_i - \lambda)\rho_{i+1,j + 1} - (\lambda + \eta_i) \rho_{i-1, j + 1} =  (2 - 2\lambda - \tau_i) \rho_{i,j} + (\lambda - \eta_i) \rho_{i+1,j} + (\lambda + \eta_i) \rho_{i-1, j}<br/>
+\end{align}<br/>
+\]</p>
+
+<p>where \(\lambda=\frac{D \cdot \Delta t}{\Delta x^2}\), \(\eta_i = - \frac{D \cdot \Delta t}{2 k_BT \Delta x} \cdot U^{\prime}(x_i)\), \(\tau_i = - \frac{D \cdot \Delta t}{k_BT} \cdot U^{\prime \prime}(x_i)\).</p>
+
+<p>Rewrite this in matrix form, </p>
+
+<p>\[<br/>
+\begin{equation}<br/>
+A \vec{\rho}_{i, j + 1} - R = B \vec{\rho}_{i, j} + R<br/>
+\end{equation}<br/>
+\]</p>
+
+<p>Supplemented by initial condition:  \( \rho_{i,0} = \rho(x_i)\),<br/>
+and Boundary conditions: \( \rho_{0,j} = \rho_0\), \( \rho_{m,j} = \rho_m\), we can solve it like this:</p>
+
+<p><img src="media/15153040186127/Screenshot%202018-01-07%2015.28.00.png" alt="Screenshot 2018-01-07 15.28.00"/></p>
+
+<p>Solving an example system with initial value of \(\rho=1.0\) at \(x=30 \unicode{x212B}\) and boundary conditions with \(\rho_L = \rho_R = 0\) using the potential profile of \(n_w = 0\).<br/>
+<img src="pics/potential-crank-nicolson.gif"></p>
+
+<p>Potential used in this example and its derivatives are as follows:</p>
+
+<p><img src="media/15153040186127/Screenshot%202018-01-07%2015.33.08.png" alt="Screenshot 2018-01-07 15.33.08"/><br/>
+<img src="media/15153040186127/Screenshot%202018-01-07%2015.33.23.png" alt="Screenshot 2018-01-07 15.33.23"/><br/>
+<img src="media/15153040186127/Screenshot%202018-01-07%2015.33.34.png" alt="Screenshot 2018-01-07 15.33.34"/></p>
+
+<h2 id="toc_6">C. Solving coupled diffusion equations with potential profiles and reactions.</h2>
+
+<p>When reaction terms are added to the equation(16), equations corresponding to different \(n_w\) become coupled equations: </p>
+
+<p>\[<br/>
+\begin{equation}<br/>
+\begin{cases}<br/>
+\frac{\partial \rho_0(x, t)}{\partial t}<br/>
+= D \frac{\partial}{\partial x}[ \frac{\partial \rho_0(x, t)}{\partial x} + \frac{1}{k_BT} \frac{\partial U_0(x)}{\partial x}\rho_0(x, t)] - [k_{0 \to 1} + k_0^{wf}(x)]\rho_0(x, t) + k_{1 \to 0}\rho_1(x, t) \\<br/>
+\frac{\partial \rho_1(x, t)}{\partial t}<br/>
+= D \frac{\partial}{\partial x}[ \frac{\partial \rho_1(x, t)}{\partial x} + \frac{1}{k_BT} \frac{\partial U_1(x)}{\partial x}\rho_1(x, t)] - [k_{1 \to 2} + k_{1 \to 0} + k_1^{wf}(x)]\rho_1(x, t) + k_{2 \to 1}\rho_2(x, t) + k_{0 \to 1}\rho_0(x, t) \\<br/>
+\frac{\partial \rho_2(x, t)}{\partial t}<br/>
+= D \frac{\partial}{\partial x}[ \frac{\partial \rho_2(x, t)}{\partial x} + \frac{1}{k_BT} \frac{\partial U_2(x)}{\partial x}\rho_2(x, t)] - [k_{2 \to 3} + k_{2 \to 1} + k_2^{wf}(x)]\rho_2(x, t) + k_{3 \to 2}\rho_3(x, t) + k_{1 \to 2}\rho_1(x, t) \\<br/>
+\vdots \\<br/>
+\vdots \\<br/>
+\frac{\partial \rho_{n-1}(x, t)}{\partial t}<br/>
+= D \frac{\partial}{\partial x}[ \frac{\partial \rho_{n-1}(x, t)}{\partial x} + \frac{1}{k_BT} \frac{\partial U_{n-1}(x)}{\partial x}\rho_{n-1}(x, t)] - [k_{n-1 \to n} + k_{n-1 \to n-2} + k_{n-1}^{wf}(x)]\rho_{n-1}(x, t) + k_{n \to n-1}\rho_n(x, t) + k_{n-2 \to n-1}\rho_{n-2}(x, t) \\<br/>
+\frac{\partial \rho_n(x, t)}{\partial t}<br/>
+= D \frac{\partial}{\partial x}[ \frac{\partial \rho_n(x, t)}{\partial x} + \frac{1}{k_BT} \frac{\partial U_n(x)}{\partial x}\rho_n(x, t)] - [k_{n \to n-1} + k_n^{wf}(x)]\rho_n(x, t) + k_{n-1 \to n}\rho_{n-1}(x, t)<br/>
+\end{cases}<br/>
+\end{equation}<br/>
+\]</p>
+
+<p>Let \(\rho_{i,j}^k = \rho_k(x_i,t_j)\), the finite difference in Crank-Nicolson scheme for \(n_w = k\) is:</p>
+
+<p>\[<br/>
+\begin{align}<br/>
+&amp;\ \frac{\rho_{i,j + 1}^k - \rho_{i,j}^k}{\Delta t} = \frac{D}{2} ( \frac{\rho_{i+1,j}^k - 2\rho_{i,j}^k + \rho_{i-1,j}}{\Delta x^2} + \frac{\rho_{i + 1,j + 1} - 2\rho_{i,j + 1} + \rho_{i - 1,j + 1}}{\Delta x^2} ) + \frac{D \cdot U_k^{\prime}(x_i)}{2 k_BT} (\frac{\rho_{i + 1,j + 1}^k - \rho_{i - 1,j + 1}^k}{2 \Delta x} + \frac{\rho_{i + 1,j}^k - \rho_{i - 1, j}^k}{2 \Delta x}) + \frac{D \cdot U_k^{\prime \prime}(x_i)}{2 k_BT} (\rho_{i,j + 1}^k + \rho_{i,j}^k) - \frac{k_{k \to k-1} + k_{k \to k+1} + k_k^{wf}(x_i)}{2} (\rho_{i,j+1}^k + \rho_{i,j}^k) + \frac{k_{k-1 \to k}}{2} (\rho_{i,j+1}^{k-1} + \rho_{i,j}^{k-1}) + \frac{k_{k+1 \to k}}{2} (\rho_{i,j+1}^{k+1} + \rho_{i,j}^{k+1})\\<br/>
+&amp;\Rightarrow  (2 + 2\lambda + \tau_i^k) \rho_{i,j + 1}^k + (\eta_i - \lambda)\rho_{i+1,j + 1}^k - (\lambda + \eta_i^k) \rho_{i-1, j + 1}^k + \xi_i^k \rho_{i,j + 1}^k - \zeta^k \rho_{i,j + 1}^{k+1} - \kappa^k \rho_{i,j + 1}^{k-1} =  (2 - 2\lambda - \tau_i^k) \rho_{i,j}^k + (\lambda - \eta_i^k) \rho_{i+1,j}^k + (\lambda + \eta_i^k) \rho_{i-1, j}^k - \xi_i^k \rho_{i,j + 1}^k + \zeta^k \rho_{i,j + 1}^{k+1} + \kappa^k \rho_{i,j + 1}^{k-1}<br/>
+\end{align}<br/>
+\]</p>
+
+<p>where </p>
+
+<p>\[<br/>
+\begin{align}<br/>
+&amp;\lambda=\frac{D \cdot \Delta t}{\Delta x^2} \\<br/>
+&amp;\eta_i^k = - \frac{D \cdot \Delta t}{2 k_BT \Delta x} \cdot U_k^{\prime}(x_i) \\<br/>
+&amp;\tau_i^k = - \frac{D \cdot \Delta t}{k_BT} \cdot U_k^{\prime \prime}(x_i) \\<br/>
+&amp;\xi_i^k = (k_{k \to k+1} + k_{k \to k-1} + k_k^{wf}(x_i)) \Delta t \\<br/>
+&amp;\zeta^k = k_{k+1 \to k} \Delta t \\<br/>
+&amp;\kappa^k = k_{k-1 \to k} \Delta t<br/>
+\end{align}<br/>
+\]</p>
+
+<p>We further define following \((m-1) \times (m-1)\) matrices:</p>
+
+<p><img src="media/15153040186127/Screenshot%202018-01-07%2015.38.20.png" alt="Screenshot 2018-01-07 15.38.20"/></p>
+
+<p>Rewrite in matrix form,</p>
+
+<p><img src="media/15153040186127/Screenshot%202018-01-07%2015.38.29.png" alt="Screenshot 2018-01-07 15.38.29"/></p>
+
+<p>Solving an example system with initial value of \(\rho=1.0\) at \(x=40 \unicode{x212B}\) for all \(n_w=0:9\) and boundary conditions with \(\rho_L = \rho_R = 0\) using the potential profile of \(n_w = 0\).<br/>
+<img src="media/15153040186127/coupled.gif" alt="coupled"/></p>
+
+<p>The above example calculations are produced using Julia 6.0 with matplotlib. You can find the example jupyter notebook file <a href="http://nbviewer.jupyter.org/gist/superkerokero/e5340ecacefe20d11815010a22ee2799">HERE</a>.</p>
+
+
+    
+
+      </div>
+
+      <div class="row">
+        <div class="large-6 columns">
+        <p class="text-left" style="padding:15px 0px;">
+      
+        </p>
+        </div>
+        <div class="large-6 columns">
+      <p class="text-right" style="padding:15px 0px;">
+      
+          <a  href="15152601961161.html" 
+          title="Next Post: Notes on reverse SSH tunnel: Connect to servers behind NATs and firewalls through publicly available middle server">Notes on reverse SSH tunnel: Connect to servers behind NATs and firewalls through publicly available middle server &raquo;</a>
+      
+      </p>
+        </div>
+      </div>
+      <div class="comments-wrap">
+        <div class="share-comments">
+          <div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = https://superkerokero.github.io;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = superkerokeroblog; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://superkerokero-blog.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+          
+            <div id="disqus_thread"></div>
+          
+
+          
+        </div>
+      </div>
+    </div><!-- article-wrap -->
+  </div><!-- large 8 -->
+
+
+
+
+ <div class="large-4 medium-4 columns">
+  <div class="hide-for-small">
+    <div id="sidebar" class="sidebar">
+          <div id="site-info" class="site-info">
+            
+                <div class="site-a-logo"><img src="asset/img/icon.png" /></div>
+            
+                <h1>Computational Nonsense</h1>
+                <div class="site-des">Superkerokero's personal blog </div>
+                <div class="social">
+<a target="_blank" class="facebook" href="https://www.facebook.com/lingjian.wang.7" title="Facebook">Facebook</a>
+
+
+
+
+
+
+
+<a target="_blank" class="twitter" target="_blank" href="https://twitter.com/windd1231" title="Twitter">Twitter</a>
+<a target="_blank" class="github" target="_blank" href="https://superkerokero.github.com" title="GitHub">GitHub</a>
+<a target="_blank" class="email" href="mailto:superkerokero@outlook.com" title="Email">Email</a>
+  <a target="_blank" class="rss" href="atom.xml" title="RSS">RSS</a>
+                
+              	 </div>
+          	</div>
+
+             
+
+              <div id="site-categories" class="side-item ">
+                <div class="side-header">
+                  <h2>Categories</h2>
+                </div>
+                <div class="side-content">
+
+      	<p class="cat-list">
+        
+            <a href="hackers.html"><strong>Hacker's</strong></a>
+        
+            <a href="numerical.html"><strong>Numerical</strong></a>
+         
+        </p>
+
+
+                </div>
+              </div>
+
+              <div id="site-categories" class="side-item">
+                <div class="side-header">
+                  <h2>Recent Posts</h2>
+                </div>
+                <div class="side-content">
+                <ul class="posts-list">
+	      
+		      
+			      <li class="post">
+			        <a href="15153040186127.html">Notes on numerically solving diffusion equations.</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152601961161.html">Notes on reverse SSH tunnel: Connect to servers behind NATs and firewalls through publicly available middle server</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152599330196.html">Slack webhooks for dummies: a beginer's guide to making your own slack bots using Python</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152598378572.html">Some notes on the use of "sed" command for text processing automation</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152585359421.html">Markdown syntax guide full version</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152582683289.html">How to disable Nouvean driver and Install CUDA 8.0 & cuDNN 5.1 on Fedora 17</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15152368299031.html">Setting up a blog on Github Pages that can be updated using only your iPad/iPhone</a>
+			      </li>
+		     
+		   
+		  		</ul>
+                </div>
+              </div>
+        </div><!-- sidebar -->
+      </div><!-- hide for small -->
+</div><!-- large 4 -->
+
+</div><!-- row -->
+
+ <div class="page-bottom clearfix">
+    <div class="row">
+        <p class="copyright">Copyright &copy; superkerokero 2018 Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a>,&nbsp; Theme used <a target="_blank" href="http://github.com">GitHub CSS</a>.</p>
+    </div>
+</div>
+
+</section>
+</div>
+</div>
+
+
+<script type="text/javascript">
+    var disqus_shortname = 'superkerokero-blog';
+
+    (function() {
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+
+<script type="text/javascript">
+    var disqus_shortname = 'superkerokero-blog';
+
+    (function() {
+        var s = document.createElement('script');
+        s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+ 
+
+<script src="asset/js/foundation.min.js"></script>
+<script>
+    $(document).foundation();
+
+    function fixSidebarHeight() {
+        var w1 = $('.markdown-body').height();
+        var w2 = $('#sidebar').height();
+        if (w1 > w2) {
+            $('#sidebar').height(w1);
+        };
+    }
+    $(function() {
+        fixSidebarHeight();
+    })
+    $(window).load(function() {
+        fixSidebarHeight();
+    });
+</script>
+
+<script src="asset/chart/all-min.js"></script><script type="text/javascript">$(function(){    var mwebii=0;    var mwebChartEleId = 'mweb-chart-ele-';    $('pre>code').each(function(){        mwebii++;        var eleiid = mwebChartEleId+mwebii;        if($(this).hasClass('language-sequence')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = Diagram.parse($(this).text());            diagram.drawSVG(eleiid,{theme: 'simple'});        }else if($(this).hasClass('language-flow')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = flowchart.parse($(this).text());            diagram.drawSVG(eleiid);        }    });});</script> <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({TeX: { equationNumbers: { autoNumber: "AMS" } }});</script> </script><!-- Go to www.addthis.com/dashboard to customize your tools --> <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5a5105188906fe47"></script>
+
+</body>
+
+</html>
